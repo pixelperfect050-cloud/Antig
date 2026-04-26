@@ -1,0 +1,1 @@
+export const API_URL = "https://anti-g6oh.onrender.com/api";

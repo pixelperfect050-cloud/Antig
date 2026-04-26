@@ -1,6 +1,33 @@
 const Order = require('../models/Order');
+const Job = require('../models/Job');
 const path = require('path');
 const { getIO } = require('../services/socketService');
+
+exports.createOrder = async (req, res) => {
+  try {
+    const { jobId } = req.body;
+    const job = await Job.findById(jobId);
+    if (!job) return res.status(404).json({ success: false, message: 'Job not found.' });
+
+    // Check if order already exists for this job
+    const existingOrder = await Order.findOne({ jobId });
+    if (existingOrder) return res.status(409).json({ success: false, message: 'Order already exists for this job.', order: existingOrder });
+
+    const order = await Order.create({
+      jobId: job._id,
+      userId: req.user._id,
+      amount: job.price || 0,
+      paymentStatus: job.price > 0 ? 'unpaid' : 'paid',
+      status: 'processing',
+    });
+
+    const populated = await Order.findById(order._id).populate('jobId').populate('userId', 'name email');
+    getIO()?.to('admin-room').emit('new-order', populated);
+    res.status(201).json({ success: true, order: populated });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
 
 exports.getUserOrders = async (req, res) => {
   try {

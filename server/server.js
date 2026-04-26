@@ -10,6 +10,8 @@ const { initializeSocket } = require('./src/services/socketService');
 const authRoutes = require('./src/routes/authRoutes');
 const jobRoutes = require('./src/routes/jobRoutes');
 const orderRoutes = require('./src/routes/orderRoutes');
+const adminRoutes = require('./src/routes/adminRoutes');
+const paymentRoutes = require('./src/routes/paymentRoutes');
 
 const app = express();
 const server = http.createServer(app);
@@ -28,6 +30,8 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/auth', authRoutes);
 app.use('/api/jobs', jobRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/payments', paymentRoutes);
 app.get('/api/health', (_req, res) => res.json({ status: 'ok', ts: new Date().toISOString() }));
 
 // Global error handler
@@ -45,6 +49,7 @@ const PORT = process.env.PORT || 5000;
   server.listen(PORT, () => {
     console.log(`\n🚀 ArtFlow Studio API → http://localhost:${PORT}`);
     console.log(`📡 WebSocket ready`);
+    console.log(`💳 Payments → ${process.env.RAZORPAY_KEY_ID ? 'Razorpay LIVE' : 'Demo Mode'}`);
     console.log(`🌍 ${process.env.NODE_ENV || 'development'}\n`);
   });
 })();

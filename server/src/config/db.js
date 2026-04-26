@@ -3,10 +3,14 @@ const bcrypt = require('bcryptjs');
 
 const connectDB = async () => {
   try {
-    const uri = process.env.MONGODB_URI; // ⚠️ yahi naam use kar (Render me bhi same)
+    let uri = process.env.MONGODB_URI;
 
+    // Fallback to in-memory MongoDB for local development
     if (!uri) {
-      throw new Error("❌ MONGODB_URI not found in environment variables");
+      console.log('⚠️  MONGODB_URI not set — using in-memory MongoDB for development...');
+      const { MongoMemoryServer } = require('mongodb-memory-server');
+      const mongod = await MongoMemoryServer.create();
+      uri = mongod.getUri();
     }
 
     await mongoose.connect(uri);

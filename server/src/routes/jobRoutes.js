@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const { createJob, getUserJobs, getAllJobs, getJobById, updateJobStatus } = require('../controllers/jobController');
+const { createJob, getUserJobs, getAllJobs, getJobById, updateJob, updateJobStatus, deleteJob } = require('../controllers/jobController');
 const { auth, adminAuth } = require('../middleware/auth');
 const { upload } = require('../middleware/upload');
 
@@ -7,6 +7,8 @@ router.post('/create', auth, upload.array('files', 10), createJob);
 router.get('/user', auth, getUserJobs);
 router.get('/all', adminAuth, getAllJobs);
 router.get('/:id', auth, getJobById);
+router.put('/:id', auth, updateJob);
 router.put('/:id/status', adminAuth, updateJobStatus);
+router.delete('/:id', auth, deleteJob);
 
 module.exports = router;

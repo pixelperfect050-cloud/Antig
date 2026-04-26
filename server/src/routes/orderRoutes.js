@@ -1,8 +1,9 @@
 const router = require('express').Router();
-const { getUserOrders, getAllOrders, getOrderById, uploadDelivery, downloadFile, submitFeedback } = require('../controllers/orderController');
+const { createOrder, getUserOrders, getAllOrders, getOrderById, uploadDelivery, downloadFile, submitFeedback } = require('../controllers/orderController');
 const { auth, adminAuth } = require('../middleware/auth');
 const { deliveryUpload } = require('../middleware/upload');
 
+router.post('/', auth, createOrder);
 router.get('/user', auth, getUserOrders);
 router.get('/all', adminAuth, getAllOrders);
 router.get('/:id', auth, getOrderById);

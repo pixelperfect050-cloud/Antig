@@ -31,6 +31,7 @@ const jobSchema = new mongoose.Schema(
       enum: ['low', 'normal', 'high', 'urgent'],
       default: 'normal',
     },
+    price: { type: Number, default: 0 },
     estimatedDelivery: Date,
     adminNotes: { type: String, default: '' },
     statusHistory: [

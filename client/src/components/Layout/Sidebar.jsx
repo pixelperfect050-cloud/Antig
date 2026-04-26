@@ -1,6 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { LayoutDashboard, PlusCircle, Briefcase, Package, ShieldCheck, LogOut, PenTool, X } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, Briefcase, Package, ShieldCheck, LogOut, PenTool, X, CreditCard } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const navItems = [
@@ -43,7 +43,7 @@ export default function Sidebar({ open, onClose }) {
             <div className="my-3 mx-3.5 border-t border-gray-100" />
             <p className="text-[10px] text-gray-400 uppercase tracking-widest font-medium px-3.5 mb-2">Admin</p>
             <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}>
-              <NavLink to="/admin" className={linkClass} onClick={onClose}><ShieldCheck className="w-[18px] h-[18px]" /><span>Manage Jobs</span></NavLink>
+              <NavLink to="/admin" className={linkClass} onClick={onClose}><ShieldCheck className="w-[18px] h-[18px]" /><span>Admin Panel</span></NavLink>
             </motion.div>
           </>
         )}
@@ -57,6 +57,7 @@ export default function Sidebar({ open, onClose }) {
               <p className="text-xs text-gray-400 truncate">{user?.email}</p>
             </div>
           </div>
+          {isAdmin && <div className="flex items-center gap-1.5 mb-2 px-1"><span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-purple-50 text-purple-600"><ShieldCheck className="w-2.5 h-2.5" />Admin</span></div>}
           <button onClick={handleLogout} className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs text-gray-500 hover:text-red-600 hover:bg-red-50 transition-all"><LogOut className="w-3.5 h-3.5" /> Sign out</button>
         </div>
       </div>

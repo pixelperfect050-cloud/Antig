@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { PenTool, Layers, ImageIcon, Zap, FileType, HelpCircle, Send } from 'lucide-react';
+import { PenTool, Layers, ImageIcon, Zap, FileType, HelpCircle, Send, DollarSign } from 'lucide-react';
 import FileUpload from '../components/shared/FileUpload';
 import api from '../services/api';
 import toast from 'react-hot-toast';
@@ -22,7 +22,7 @@ const priorities = [
 ];
 
 export default function CreateJob() {
-  const [form, setForm] = useState({ title: '', description: '', serviceType: '', instructions: '', priority: 'normal' });
+  const [form, setForm] = useState({ title: '', description: '', serviceType: '', instructions: '', priority: 'normal', price: '' });
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -65,10 +65,20 @@ export default function CreateJob() {
         <div><label className="block text-sm font-medium text-gray-700 mb-2">Job Title</label><input type="text" value={form.title} onChange={update('title')} className="input-field" placeholder="e.g. Logo vectorization" required /></div>
         <div><label className="block text-sm font-medium text-gray-700 mb-2">Description</label><textarea value={form.description} onChange={update('description')} className="input-field min-h-[100px] resize-y" placeholder="Describe what you need..." /></div>
         <div><label className="block text-sm font-medium text-gray-700 mb-2">Instructions</label><textarea value={form.instructions} onChange={update('instructions')} className="input-field min-h-[80px] resize-y" placeholder="Formats, colors, sizes..." /></div>
-        <div><label className="block text-sm font-medium text-gray-700 mb-3">Priority</label>
-          <div className="flex flex-wrap gap-2">{priorities.map(({ value, label, active }) => (
-            <button key={value} type="button" onClick={() => setForm({ ...form, priority: value })} className={`px-4 py-2 rounded-xl border text-sm font-medium transition-all ${form.priority === value ? active : 'border-gray-200 text-gray-500 bg-white'}`}>{label}</button>
-          ))}</div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div><label className="block text-sm font-medium text-gray-700 mb-3">Priority</label>
+            <div className="flex flex-wrap gap-2">{priorities.map(({ value, label, active }) => (
+              <button key={value} type="button" onClick={() => setForm({ ...form, priority: value })} className={`px-4 py-2 rounded-xl border text-sm font-medium transition-all ${form.priority === value ? active : 'border-gray-200 text-gray-500 bg-white'}`}>{label}</button>
+            ))}</div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Budget / Price (₹)</label>
+            <div className="relative">
+              <DollarSign className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input type="number" value={form.price} onChange={update('price')} className="input-field pl-10" placeholder="Optional — set by admin" min="0" step="1" />
+            </div>
+            <p className="text-xs text-gray-400 mt-1">Leave empty if admin will set the price</p>
+          </div>
         </div>
         <div><label className="block text-sm font-medium text-gray-700 mb-3">Upload Files</label><FileUpload files={files} setFiles={setFiles} /></div>
         <button type="submit" disabled={loading} className="btn-primary w-full sm:w-auto flex items-center justify-center gap-2">
