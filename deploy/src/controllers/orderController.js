@@ -1,0 +1,117 @@
+const Order = require('../models/Order');
+const Job = require('../models/Job');
+const path = require('path');
+const { getIO } = require('../services/socketService');
+
+exports.createOrder = async (req, res) => {
+  try {
+    const { jobId } = req.body;
+    const job = await Job.findById(jobId);
+    if (!job) return res.status(404).json({ success: false, message: 'Job not found.' });
+
+    // Check if order already exists for this job
+    const existingOrder = await Order.findOne({ jobId });
+    if (existingOrder) return res.status(409).json({ success: false, message: 'Order already exists for this job.', order: existingOrder });
+
+    const order = await Order.create({
+      jobId: job._id,
+      userId: req.user._id,
+      amount: job.price || 0,
+      paymentStatus: job.price > 0 ? 'unpaid' : 'paid',
+      status: 'processing',
+    });
+
+    const populated = await Order.findById(order._id).populate('jobId').populate('userId', 'name email');
+    getIO()?.to('admin-room').emit('new-order', populated);
+    res.status(201).json({ success: true, order: populated });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+exports.getUserOrders = async (req, res) => {
+  try {
+    const orders = await Order.find({ userId: req.user._id }).populate('jobId').sort({ createdAt: -1 });
+    res.json({ success: true, orders });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+exports.getAllOrders = async (_req, res) => {
+  try {
+    const orders = await Order.find().populate('jobId').populate('userId', 'name email').sort({ createdAt: -1 });
+    res.json({ success: true, orders });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+exports.getOrderById = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id).populate('jobId').populate('userId', 'name email');
+    if (!order) return res.status(404).json({ success: false, message: 'Order not found.' });
+    res.json({ success: true, order });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+exports.uploadDelivery = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ success: false, message: 'Order not found.' });
+
+    const files = (req.files || []).map((f) => ({
+      filename: f.filename,
+      originalName: f.originalname,
+      path: f.path,
+      size: f.size,
+      mimetype: f.mimetype,
+    }));
+
+    order.deliveryFiles.push(...files);
+    order.status = 'ready';
+    order.deliveryNotes = req.body.deliveryNotes || order.deliveryNotes;
+    await order.save();
+
+    getIO()?.to(`user-${order.userId}`).emit('order-updated', order);
+    res.json({ success: true, order });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+exports.downloadFile = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ success: false, message: 'Order not found.' });
+
+    const file = order.deliveryFiles.find((f) => f.filename === req.params.filename);
+    if (!file) return res.status(404).json({ success: false, message: 'File not found.' });
+
+    order.downloadCount += 1;
+    order.status = 'delivered';
+    await order.save();
+
+    res.download(path.resolve(file.path), file.originalName);
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+exports.submitFeedback = async (req, res) => {
+  try {
+    const { rating, feedback } = req.body;
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ success: false, message: 'Order not found.' });
+
+    order.rating = rating;
+    order.feedback = feedback;
+    await order.save();
+
+    res.json({ success: true, order });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
