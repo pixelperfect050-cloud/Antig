@@ -1,9 +1,11 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import toast from "react-hot-toast";
 
 export default function Signup() {
   const { signup } = useAuth();
+  const navigate = useNavigate();
 
   const [form, setForm] = useState({
     name: "",
@@ -35,6 +37,7 @@ export default function Signup() {
       );
 
       toast.success("Signup successful ✅");
+      navigate("/dashboard");
     } catch (err) {
       toast.error(err.response?.data?.message || "Signup failed ❌");
     }
