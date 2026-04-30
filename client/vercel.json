@@ -2,15 +2,15 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://anti-g6oh.onrender.com/api/:path*"
+      "destination": "https://antig-backend-y4uy.onrender.com/api/:path*"
     },
     {
       "source": "/uploads/:path*",
-      "destination": "https://anti-g6oh.onrender.com/uploads/:path*"
+      "destination": "https://antig-backend-y4uy.onrender.com/uploads/:path*"
     },
     {
       "source": "/socket.io/:path*",
-      "destination": "https://anti-g6oh.onrender.com/socket.io/:path*"
+      "destination": "https://antig-backend-y4uy.onrender.com/socket.io/:path*"
     },
     {
       "source": "/((?!api|uploads|socket\\.io).*)",

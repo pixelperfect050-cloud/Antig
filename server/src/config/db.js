@@ -5,7 +5,13 @@ const connectDB = async () => {
   try {
     let uri = process.env.MONGODB_URI;
 
-    // Fallback to in-memory MongoDB for local development
+    // In production, MONGODB_URI is required
+    if (!uri && process.env.NODE_ENV === 'production') {
+      console.error('❌ MONGODB_URI is required in production!');
+      process.exit(1);
+    }
+
+    // Fallback to in-memory MongoDB for local development only
     if (!uri) {
       console.log('⚠️  MONGODB_URI not set — using in-memory MongoDB for development...');
       const { MongoMemoryServer } = require('mongodb-memory-server');
