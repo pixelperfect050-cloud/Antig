@@ -72,6 +72,17 @@ export function AuthProvider({ children }) {
     setUser(null);
   };
 
+  // 🔄 REFRESH
+  const refreshUser = async () => {
+    try {
+      const { data } = await api.get('/auth/me');
+      setUser(data.user);
+      return data.user;
+    } catch (err) {
+      console.error('Failed to refresh user:', err.message);
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -81,6 +92,7 @@ export function AuthProvider({ children }) {
         login,
         signup,
         logout,
+        refreshUser,
         isAdmin: user?.role === 'admin',
       }}
     >

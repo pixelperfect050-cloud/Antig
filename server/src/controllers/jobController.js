@@ -130,6 +130,7 @@ exports.updateJobStatus = async (req, res) => {
           userId: job.userId,
           status: 'processing',
           amount: job.price || 0,
+          originalAmount: job.price || 0,
           paymentStatus: job.price > 0 ? 'unpaid' : 'paid',
         });
 

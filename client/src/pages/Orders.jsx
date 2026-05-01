@@ -112,10 +112,15 @@ export default function Orders() {
     const amount = creditsToUse[orderId] || 0;
     if (amount <= 0) return;
     try {
-      const { data } = await api.post('/credits/use', { amount, reason: 'order_discount' });
+      const { data } = await api.post('/credits/use', { amount, reason: 'order_discount', orderId });
       toast.success(`🪙 ${amount} coins applied! New balance: ${data.credits}`);
       setCredits(data.credits);
       setUseCreditsMode((p) => ({ ...p, [orderId]: false }));
+      
+      // Update order in state
+      if (data.order) {
+        setOrders((p) => p.map((o) => o._id === orderId ? data.order : o));
+      }
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to apply credits');
     }
@@ -242,6 +247,9 @@ export default function Orders() {
                       <p className="text-xs text-gray-400 mt-0.5">
                         {format(new Date(o.createdAt), 'MMM d, yyyy')}
                         {o.amount > 0 && <> · <span className="font-medium text-gray-600">₹{o.amount}</span></>}
+                        {o.discountAmount > 0 && (
+                          <> · <span className="text-amber-600 font-bold">-₹{o.discountAmount}</span> <span className="text-[10px] text-amber-500 font-bold">(🪙 {o.discountAmount})</span></>
+                        )}
                       </p>
                     </div>
                   </div>

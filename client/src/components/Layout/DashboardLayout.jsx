@@ -7,12 +7,26 @@ import NotificationBell from '../shared/NotificationBell';
 
 export default function DashboardLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { user, isAdmin } = useAuth();
-
+  const { user, isAdmin, refreshUser } = useAuth();
+  
   useEffect(() => {
-    if (user) connectSocket(user._id, isAdmin);
-    return () => disconnectSocket();
-  }, [user, isAdmin]);
+    if (!user) return;
+    connectSocket(user._id, isAdmin);
+
+    const handleNotification = (n) => {
+      // If notification is about credits, refresh the user object to update the badge
+      if (n.type === 'credits_earned' || n.type === 'credits_used') {
+        refreshUser();
+      }
+    };
+
+    socket.on('notification', handleNotification);
+
+    return () => {
+      socket.off('notification', handleNotification);
+      disconnectSocket();
+    };
+  }, [user, isAdmin, refreshUser]);
 
   return (
     <div className="min-h-screen bg-[#F5F7FA]">

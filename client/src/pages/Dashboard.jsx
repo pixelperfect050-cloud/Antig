@@ -55,22 +55,9 @@ export default function Dashboard() {
   const { notifications } = useNotifications();
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [credits, setCredits] = useState({ credits: 0, totalCreditsEarned: 0 });
 
   useEffect(() => { api.get('/jobs/user').then(({ data }) => setJobs(data.jobs)).catch(() => {}).finally(() => setLoading(false)); }, []);
   useEffect(() => { socket.on('job-updated', (u) => setJobs((p) => p.map((j) => (j._id === u._id ? u : j)))); return () => socket.off('job-updated'); }, []);
-  useEffect(() => { api.get('/credits').then(({ data }) => setCredits(data)).catch(() => {}); }, []);
-
-  // Listen for credit updates via notifications
-  useEffect(() => {
-    const handleNotification = (n) => {
-      if (n.type === 'credits_earned' || n.type === 'credits_used') {
-        api.get('/credits').then(({ data }) => setCredits(data)).catch(() => {});
-      }
-    };
-    socket.on('notification', handleNotification);
-    return () => socket.off('notification', handleNotification);
-  }, []);
 
   const total = jobs.length;
   const active = jobs.filter((j) => !['completed', 'cancelled'].includes(j.status)).length;
@@ -139,16 +126,16 @@ export default function Dashboard() {
                 <p className="text-sm text-gray-400 font-medium mb-0.5">Your Coin Balance</p>
                 <div className="flex items-baseline gap-2">
                   <motion.span
-                    key={credits.credits}
+                    key={user?.credits}
                     initial={{ scale: 1.3, color: '#ff7a18' }}
                     animate={{ scale: 1, color: '#fff' }}
                     transition={{ duration: 0.5 }}
                     className="text-3xl sm:text-4xl font-display font-black text-white">
-                    {credits.credits || 0}
+                    {user?.credits || 0}
                   </motion.span>
                   <span className="text-sm text-gray-500">coins</span>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">Total earned: {credits.totalCreditsEarned || 0} coins</p>
+                <p className="text-xs text-gray-400 mt-1">Total earned: {user?.totalCreditsEarned || 0} coins</p>
               </div>
             </div>
             <div className="flex flex-col gap-2 text-xs text-gray-400">

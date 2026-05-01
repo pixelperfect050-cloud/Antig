@@ -22,6 +22,8 @@ const orderSchema = new mongoose.Schema(
     deliveryNotes: { type: String, default: '' },
     downloadCount: { type: Number, default: 0 },
     amount: { type: Number, default: 0 },
+    originalAmount: { type: Number, default: 0 },
+    discountAmount: { type: Number, default: 0 },
     paymentStatus: {
       type: String,
       enum: ['unpaid', 'pending', 'paid', 'failed', 'refunded'],

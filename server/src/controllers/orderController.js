@@ -19,6 +19,7 @@ exports.createOrder = async (req, res) => {
       jobId: job._id,
       userId: req.user._id,
       amount: job.price || 0,
+      originalAmount: job.price || 0,
       paymentStatus: job.price > 0 ? 'unpaid' : 'paid',
       status: 'processing',
     });
