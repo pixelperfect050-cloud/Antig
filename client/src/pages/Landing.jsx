@@ -98,7 +98,7 @@ export default function Landing() {
   const filtered = activeCat === 'All' ? portfolio : portfolio.filter((p) => p.cat === activeCat);
 
   return (
-    <div className="min-h-screen bg-white text-[#0B1220] overflow-x-hidden hide-cursor">
+    <div className="min-h-screen bg-white text-[#0B1220] overflow-x-hidden">
       <CustomCursor />
 
       {/* ── NAV ── */}
@@ -243,6 +243,79 @@ export default function Landing() {
               </FadeUp>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ── PRICING PROMO ── */}
+      <section className="bg-white py-20 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-bl from-orange-50 to-transparent rounded-full -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-72 h-72 bg-gradient-to-tr from-orange-50 to-transparent rounded-full translate-y-1/2 -translate-x-1/2 pointer-events-none" />
+        
+        <div className="max-w-6xl mx-auto px-6 relative z-10">
+          <FadeUp className="text-center mb-14">
+            <p className="text-sm text-[#ff7a18] font-semibold uppercase tracking-widest mb-3">Simple Pricing</p>
+            <h2 className="text-3xl sm:text-4xl font-display font-bold text-[#0B1220] mb-4">Studio-Quality Work. Unbeatable Prices.</h2>
+            <p className="text-gray-500 max-w-lg mx-auto">No hidden fees. No subscriptions. Just pay per project and get production-ready results.</p>
+          </FadeUp>
+          
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-12">
+            {[
+              { icon: PenTool, title: 'Vector Tracing', price: '5.99', tag: 'Most Popular', desc: 'Simple logos & text', slug: 'vector-tracing' },
+              { icon: Layers, title: 'Embroidery Digitizing', price: '9.99', tag: 'Best Value', desc: 'Left chest / cap designs', slug: 'embroidery-digitizing' },
+              { icon: ImageIcon, title: 'Logo Design', price: '49.99', tag: 'Custom', desc: '3 unique concepts included', slug: 'logo-design' },
+              { icon: FileType, title: 'Format Conversion', price: '4.99', tag: 'Quick', desc: 'Any format to any format', slug: 'format-conversion' },
+            ].map(({ icon: Icon, title, price, tag, desc, slug }, i) => (
+              <FadeUp key={i} delay={i * 0.1}>
+                <Link to={`/services/${slug}`}>
+                  <motion.div 
+                    whileHover={{ y: -10, boxShadow: '0 25px 50px rgba(255, 122, 24, 0.15)' }}
+                    className="relative bg-white rounded-2xl border border-gray-100 p-6 h-full group overflow-hidden transition-all duration-300 hover:border-orange-200"
+                  >
+                    <div className="absolute top-3 right-3">
+                      <span className="text-[9px] font-bold uppercase tracking-wider bg-orange-50 text-[#ff7a18] px-2.5 py-1 rounded-full">{tag}</span>
+                    </div>
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-50 to-orange-100/50 flex items-center justify-center mb-4">
+                      <Icon className="w-5 h-5 text-[#ff7a18]" />
+                    </div>
+                    <h3 className="font-display font-semibold text-[#0B1220] mb-1 group-hover:text-[#ff7a18] transition-colors">{title}</h3>
+                    <p className="text-xs text-gray-400 mb-4">{desc}</p>
+                    <div className="flex items-baseline gap-1 mb-4">
+                      <span className="text-sm text-gray-400 font-medium">from</span>
+                      <span className="text-3xl font-display font-bold text-[#0B1220]">${price}</span>
+                    </div>
+                    <span className="text-xs font-semibold text-[#ff7a18] flex items-center gap-1 group-hover:gap-2 transition-all">
+                      Get Started <ArrowRight className="w-3 h-3" />
+                    </span>
+                    <div className="absolute inset-0 bg-gradient-to-t from-orange-50/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded-2xl" />
+                  </motion.div>
+                </Link>
+              </FadeUp>
+            ))}
+          </div>
+          
+          <FadeUp delay={0.3}>
+            <motion.div 
+              whileHover={{ scale: 1.01 }}
+              className="bg-gradient-to-r from-[#0B1220] via-[#1a2a4a] to-[#0B1220] rounded-3xl p-8 sm:p-10 flex flex-col sm:flex-row items-center justify-between gap-6 relative overflow-hidden"
+            >
+              <motion.div className="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-[#ff7a18]/10" animate={{ scale: [1, 1.3, 1] }} transition={{ duration: 4, repeat: Infinity }} />
+              <motion.div className="absolute -bottom-6 -left-6 w-24 h-24 rounded-full bg-[#ff7a18]/8" animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 5, repeat: Infinity, delay: 1 }} />
+              <div className="text-center sm:text-left relative z-10">
+                <div className="flex items-center gap-3 mb-2">
+                  <motion.div animate={{ rotate: [0, 10, -10, 0] }} transition={{ duration: 3, repeat: Infinity }} className="text-3xl">🎨</motion.div>
+                  <div>
+                    <h3 className="text-white font-display font-bold text-xl">Need a custom quote?</h3>
+                    <p className="text-gray-400 text-sm">Complex projects, bulk orders, rush delivery — we've got you covered.</p>
+                  </div>
+                </div>
+              </div>
+              <motion.div whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.95 }} className="relative z-10 flex-shrink-0">
+                <Link to="/request-quote" className="inline-flex items-center gap-2 px-8 py-3.5 bg-[#ff7a18] hover:bg-[#EA580C] text-white font-semibold rounded-full text-sm transition-colors shadow-lg shadow-orange-500/25">
+                  Request Free Quote <ArrowRight className="w-4 h-4" />
+                </Link>
+              </motion.div>
+            </motion.div>
+          </FadeUp>
         </div>
       </section>
 

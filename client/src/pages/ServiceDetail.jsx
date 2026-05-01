@@ -24,9 +24,9 @@ const servicesData = {
       { step: '04', title: 'Delivery', desc: 'Download your production-ready vector files in all requested formats.' },
     ],
     pricing: [
-      { tier: 'Simple', price: '₹299', desc: 'Text, basic shapes, 1-2 colors', time: '4-6 hours' },
-      { tier: 'Medium', price: '₹599', desc: 'Logos, moderate detail, 3-5 colors', time: '8-12 hours' },
-      { tier: 'Complex', price: '₹999', desc: 'Detailed illustrations, many colors', time: '12-24 hours' },
+      { tier: 'Simple', price: '$5.99', desc: 'Text, basic shapes, 1-2 colors', time: '4-6 hours' },
+      { tier: 'Medium', price: '$14.99', desc: 'Logos, moderate detail, 3-5 colors', time: '8-12 hours' },
+      { tier: 'Complex', price: '$24.99', desc: 'Detailed illustrations, many colors', time: '12-24 hours' },
     ],
     useCases: ['Screen Printing', 'Embroidery', 'Signage & Banners', 'Vehicle Wraps', 'Merchandise', 'Business Cards'],
   },
@@ -51,9 +51,9 @@ const servicesData = {
       { step: '04', title: 'Production File', desc: 'Download the final file ready for your embroidery machine.' },
     ],
     pricing: [
-      { tier: 'Left Chest', price: '₹399', desc: 'Up to 10,000 stitches', time: '6-8 hours' },
-      { tier: 'Full Design', price: '₹799', desc: '10K-30K stitches', time: '12-18 hours' },
-      { tier: 'Complex / Cap', price: '₹1,299', desc: '30K+ stitches, specialty', time: '18-24 hours' },
+      { tier: 'Left Chest', price: '$9.99', desc: 'Up to 10,000 stitches', time: '6-8 hours' },
+      { tier: 'Full Design', price: '$19.99', desc: '10K-30K stitches', time: '12-18 hours' },
+      { tier: 'Complex / Cap', price: '$29.99', desc: '30K+ stitches, specialty', time: '18-24 hours' },
     ],
     useCases: ['Polo Shirts', 'Caps & Hats', 'Jackets', 'Uniforms', 'Bags & Totes', 'Patches'],
   },
@@ -78,9 +78,9 @@ const servicesData = {
       { step: '04', title: 'Final Package', desc: 'Receive your complete logo package with all formats and brand guidelines.' },
     ],
     pricing: [
-      { tier: 'Starter', price: '₹1,999', desc: '2 concepts, 3 revisions', time: '3-5 days' },
-      { tier: 'Professional', price: '₹3,999', desc: '3 concepts, unlimited revisions', time: '5-7 days' },
-      { tier: 'Premium', price: '₹7,999', desc: '5 concepts, brand guide included', time: '7-10 days' },
+      { tier: 'Starter', price: '$49.99', desc: '2 concepts, 3 revisions', time: '3-5 days' },
+      { tier: 'Professional', price: '$99.99', desc: '3 concepts, unlimited revisions', time: '5-7 days' },
+      { tier: 'Premium', price: '$199.99', desc: '5 concepts, brand guide included', time: '7-10 days' },
     ],
     useCases: ['Startups', 'Rebrand', 'Sports Teams', 'Restaurants', 'E-commerce', 'Personal Brands'],
   },
@@ -105,9 +105,9 @@ const servicesData = {
       { step: '04', title: 'Download', desc: 'Receive your files in the requested format, ready for use.' },
     ],
     pricing: [
-      { tier: 'Single File', price: '₹199', desc: 'One format conversion', time: '1-2 hours' },
-      { tier: 'Multi-Format', price: '₹499', desc: 'Convert to 5+ formats', time: '4-6 hours' },
-      { tier: 'Batch (10+)', price: '₹1,499', desc: '10+ file conversions', time: '12-24 hours' },
+      { tier: 'Single File', price: '$4.99', desc: 'One format conversion', time: '1-2 hours' },
+      { tier: 'Multi-Format', price: '$12.99', desc: 'Convert to 5+ formats', time: '4-6 hours' },
+      { tier: 'Batch (10+)', price: '$29.99', desc: '10+ file conversions', time: '12-24 hours' },
     ],
     useCases: ['Print Production', 'Web Development', 'CNC/Laser Cutting', 'Vinyl Cutting', 'Screen Printing', 'Apparel Decoration'],
   },
@@ -241,30 +241,46 @@ export default function ServiceDetail() {
         </div>
       </section>
 
-      {/* Pricing */}
+      {/* Get a Quote CTA (instead of detailed pricing) */}
       <section className="py-16 bg-white">
         <div className="max-w-5xl mx-auto px-6">
-          <FadeUp className="text-center mb-12">
-            <p className="text-sm text-[#ff7a18] font-semibold uppercase tracking-widest mb-2">Transparent Pricing</p>
-            <h2 className="text-2xl sm:text-3xl font-display font-bold text-[#0B1220]">Pricing Tiers</h2>
-          </FadeUp>
-          <div className="grid sm:grid-cols-3 gap-6">
-            {service.pricing.map((p, i) => (
-              <FadeUp key={i} delay={i * 0.1}>
-                <motion.div whileHover={{ y: -8, boxShadow: '0 20px 40px rgba(0,0,0,0.08)' }}
-                  className={`bg-white rounded-2xl p-7 border-2 transition-all duration-300 ${i === 1 ? 'border-[#ff7a18] shadow-lg shadow-orange-100' : 'border-gray-100'}`}>
-                  {i === 1 && <p className="text-xs font-bold text-[#ff7a18] uppercase tracking-wider mb-3">Most Popular</p>}
-                  <h3 className="font-display font-bold text-lg text-[#0B1220]">{p.tier}</h3>
-                  <p className="text-3xl font-display font-bold text-[#ff7a18] my-3">{p.price}</p>
-                  <p className="text-sm text-gray-500 mb-2">{p.desc}</p>
-                  <p className="text-xs text-gray-400 flex items-center gap-1 mb-5"><Clock className="w-3.5 h-3.5" /> {p.time}</p>
-                  <Link to="/request-quote" className="block text-center py-2.5 px-5 rounded-full text-sm font-semibold bg-[#ff7a18] text-white hover:bg-[#EA580C] transition-colors">
-                    Get Quote
+          <FadeUp>
+            <motion.div
+              whileHover={{ scale: 1.005 }}
+              className="relative bg-gradient-to-br from-[#0B1220] via-[#162040] to-[#0B1220] rounded-3xl p-10 sm:p-14 overflow-hidden"
+            >
+              {/* Decorative elements */}
+              <motion.div className="absolute top-0 right-0 w-64 h-64 bg-[#ff7a18]/8 rounded-full -translate-y-1/2 translate-x-1/3" animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 6, repeat: Infinity }} />
+              <motion.div className="absolute bottom-0 left-0 w-48 h-48 bg-[#ff7a18]/5 rounded-full translate-y-1/2 -translate-x-1/3" animate={{ scale: [1, 1.3, 1] }} transition={{ duration: 8, repeat: Infinity, delay: 2 }} />
+              
+              <div className="relative z-10 text-center">
+                <p className="text-sm text-[#ff7a18] font-semibold uppercase tracking-widest mb-3">Pricing</p>
+                <h2 className="text-2xl sm:text-3xl font-display font-bold text-white mb-4">Get Your Custom Quote</h2>
+                <p className="text-gray-400 max-w-lg mx-auto mb-8">
+                  Every project is unique. Tell us what you need and we'll send you a detailed quote with pricing, turnaround time, and delivery formats — all within a few hours.
+                </p>
+                
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-8">
+                  <div className="bg-white/5 backdrop-blur border border-white/10 rounded-2xl p-6 text-center">
+                    <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">Starting from</p>
+                    <p className="text-4xl font-display font-bold text-[#ff7a18]">{service.pricing[0].price}</p>
+                    <p className="text-gray-500 text-xs mt-1">{service.pricing[0].desc}</p>
+                  </div>
+                  <div className="flex flex-col items-center gap-2 text-gray-500 text-sm">
+                    <div className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-green-400" /> Free revisions included</div>
+                    <div className="flex items-center gap-2"><Clock className="w-4 h-4 text-blue-400" /> Turnaround: {service.pricing[0].time}</div>
+                    <div className="flex items-center gap-2"><Zap className="w-4 h-4 text-amber-400" /> Rush delivery available</div>
+                  </div>
+                </div>
+
+                <motion.div whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.95 }} className="inline-block">
+                  <Link to="/request-quote" className="inline-flex items-center gap-2 px-10 py-4 bg-[#ff7a18] hover:bg-[#EA580C] text-white font-semibold rounded-full text-base transition-colors shadow-lg shadow-orange-500/30">
+                    Request Free Quote <ArrowRight className="w-4 h-4" />
                   </Link>
                 </motion.div>
-              </FadeUp>
-            ))}
-          </div>
+              </div>
+            </motion.div>
+          </FadeUp>
         </div>
       </section>
 

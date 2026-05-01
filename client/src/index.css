@@ -20,37 +20,35 @@
 }
 
 /* ===== CURSOR ===== */
-.hide-cursor {
-  cursor: none;
-}
-.hide-cursor a, .hide-cursor button, .hide-cursor input, .hide-cursor textarea, .hide-cursor select {
-  cursor: none;
+.hide-cursor, .hide-cursor * {
+  cursor: none !important;
 }
 
 .custom-cursor {
   position: fixed;
   pointer-events: none;
-  z-index: 99999;
-  transform: translate(-4px, -4px);
-  transition: transform 0.15s ease;
-  filter: drop-shadow(0 2px 4px rgba(255, 122, 24, 0.3));
+  z-index: 999999;
+  transform: translate(-2px, -2px);
+  transition: transform 0.12s ease;
+  will-change: left, top, transform;
+  filter: drop-shadow(0 2px 6px rgba(255, 122, 24, 0.4));
 }
 
 .custom-cursor.cursor-hover-btn {
-  transform: translate(-4px, -4px) scale(1.3) rotate(-15deg);
-  filter: drop-shadow(0 4px 8px rgba(255, 122, 24, 0.5));
+  transform: translate(-2px, -2px) scale(1.35) rotate(-15deg);
+  filter: drop-shadow(0 4px 12px rgba(255, 122, 24, 0.6));
 }
 
 .custom-cursor-trail {
   position: fixed;
-  width: 8px;
-  height: 8px;
-  background: rgba(255, 122, 24, 0.3);
+  width: 10px;
+  height: 10px;
+  background: radial-gradient(circle, rgba(255, 122, 24, 0.5) 0%, rgba(255, 122, 24, 0) 70%);
   border-radius: 50%;
   pointer-events: none;
-  z-index: 99998;
+  z-index: 999998;
   transform: translate(-50%, -50%);
-  transition: left 0.12s ease, top 0.12s ease;
+  will-change: left, top;
 }
 
 /* ===== BUTTON ===== */
