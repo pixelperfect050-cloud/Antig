@@ -101,15 +101,22 @@ const PORT = process.env.PORT || 5000;
     console.log(`🌍 ${process.env.NODE_ENV || 'development'}\n`);
 
     // 🔄 Self-ping keep-alive — prevents Render free tier from sleeping
-    if (process.env.NODE_ENV === 'production' && process.env.RENDER_EXTERNAL_URL) {
+    if (process.env.NODE_ENV === 'production') {
       const https = require('https');
-      const KEEP_ALIVE_MS = 14 * 60 * 1000; // 14 minutes
+      const keepAliveUrl = process.env.RENDER_EXTERNAL_URL || 'https://antig-backend-y4uy.onrender.com';
+      const KEEP_ALIVE_MS = 10 * 60 * 1000; // 10 minutes
+      // Immediate first ping after 30 seconds
+      setTimeout(() => {
+        https.get(`${keepAliveUrl}/api/health`, (res) => {
+          console.log(`♻️  Keep-alive warmup → ${res.statusCode}`);
+        }).on('error', (e) => console.log('♻️  Keep-alive error:', e.message));
+      }, 30000);
       setInterval(() => {
-        https.get(`${process.env.RENDER_EXTERNAL_URL}/api/health`, (res) => {
+        https.get(`${keepAliveUrl}/api/health`, (res) => {
           console.log(`♻️  Keep-alive ping → ${res.statusCode}`);
         }).on('error', (e) => console.log('♻️  Keep-alive error:', e.message));
       }, KEEP_ALIVE_MS);
-      console.log('♻️  Keep-alive enabled (every 14 min)');
+      console.log(`♻️  Keep-alive enabled (every 10 min) → ${keepAliveUrl}`);
     }
   });
 })();
