@@ -55,6 +55,7 @@ app.use(helmet({
   crossOriginResourcePolicy: false,
   crossOriginOpenerPolicy: false,
   crossOriginEmbedderPolicy: false,
+  contentSecurityPolicy: false,
 }));
 
 app.use(morgan('dev'));
