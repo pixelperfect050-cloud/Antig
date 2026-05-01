@@ -8,6 +8,7 @@ const navItems = [
   { to: '/jobs/create', icon: PlusCircle, label: 'New Job' },
   { to: '/jobs', icon: Briefcase, label: 'My Jobs' },
   { to: '/orders', icon: Package, label: 'Orders' },
+  { to: '/rewards', icon: Coins, label: 'Rewards' },
 ];
 
 export default function Sidebar({ open, onClose }) {

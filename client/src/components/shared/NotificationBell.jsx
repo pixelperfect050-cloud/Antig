@@ -64,7 +64,10 @@ export default function NotificationBell() {
       <motion.button
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
-        onClick={() => setOpen(!open)}
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen(!open);
+        }}
         className="relative p-2 rounded-xl text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-all duration-200"
         id="notification-bell"
       >

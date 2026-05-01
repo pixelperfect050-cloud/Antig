@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard';
 import CreateJob from './pages/CreateJob';
 import Jobs from './pages/Jobs';
 import Orders from './pages/Orders';
+import Rewards from './pages/Rewards';
 import Admin from './pages/Admin';
 import RequestQuote from './pages/RequestQuote';
 import ServiceDetail from './pages/ServiceDetail';
@@ -36,6 +37,7 @@ export default function App() {
       <Route path="/jobs/create" element={<ProtectedRoute><DashboardLayout><CreateJob /></DashboardLayout></ProtectedRoute>} />
       <Route path="/jobs" element={<ProtectedRoute><DashboardLayout><Jobs /></DashboardLayout></ProtectedRoute>} />
       <Route path="/orders" element={<ProtectedRoute><DashboardLayout><Orders /></DashboardLayout></ProtectedRoute>} />
+      <Route path="/rewards" element={<ProtectedRoute><DashboardLayout><Rewards /></DashboardLayout></ProtectedRoute>} />
       <Route path="/admin" element={<ProtectedRoute><AdminRoute><DashboardLayout><Admin /></DashboardLayout></AdminRoute></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import { Menu } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { connectSocket, disconnectSocket } from '../../services/socket';
+import socket, { connectSocket, disconnectSocket } from '../../services/socket';
 import NotificationBell from '../shared/NotificationBell';
 
 export default function DashboardLayout({ children }) {
