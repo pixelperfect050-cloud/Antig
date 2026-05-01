@@ -408,7 +408,7 @@ export default function RequestQuote() {
                           Username
                         </label>
                         <input type="text" value={form.username || ''} onChange={(e) => setForm({ ...form, username: e.target.value })}
-                          className={inputClass} placeholder="Enter your CRA username if you are an existing client OR choose preferred username." />
+                          className={inputClass} placeholder="Enter your username if you are an existing client OR choose preferred username." />
                       </div>
                     </div>
                   </div>
