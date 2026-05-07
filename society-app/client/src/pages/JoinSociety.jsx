@@ -50,19 +50,19 @@ const JoinSociety = () => {
 
   const fetchBlocks = async (societyId) => {
     try {
-      const data = await api.get(`/api/blocks?societyId=${societyId}`);
+      const data = await api.get(`/api/blocks/public/${societyId}`);
       setBlocks(data);
     } catch (err) {
-      console.error(err);
+      console.error('Failed to fetch blocks:', err);
     }
   };
 
   const fetchFlats = async (blockId) => {
     try {
-      const data = await api.get(`/api/blocks/${blockId}/flats`);
+      const data = await api.get(`/api/flats/public/block/${blockId}`);
       setFlats(data);
     } catch (err) {
-      console.error(err);
+      console.error('Failed to fetch flats:', err);
     }
   };
 
@@ -170,7 +170,7 @@ const JoinSociety = () => {
                 <label>Flat</label>
                 <select value={formData.flatId} onChange={e => setFormData({...formData, flatId: e.target.value})} required disabled={!formData.blockId}>
                   <option value="">Select Flat</option>
-                  {flats.map(f => <option key={f._id} value={f._id}>{f.number}</option>)}
+                  {flats.map(f => <option key={f._id} value={f._id}>Flat {f.number} {f.floor ? `(Floor ${f.floor})` : ''}</option>)}
                 </select>
               </div>
             </div>

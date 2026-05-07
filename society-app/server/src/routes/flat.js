@@ -4,6 +4,18 @@ const Flat = require('../models/Flat');
 const Payment = require('../models/Payment');
 const { auth, adminOnly } = require('../middleware/auth');
 
+// PUBLIC: Get flats by blockId (for join flow - no auth required)
+router.get('/public/block/:blockId', async (req, res) => {
+  try {
+    const flats = await Flat.find({ blockId: req.params.blockId })
+      .select('number _id floor')
+      .sort({ floor: 1, number: 1 });
+    res.json(flats);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 // Get flats of a block
 router.get('/block/:blockId', auth, async (req, res) => {
   try {

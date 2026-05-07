@@ -41,6 +41,16 @@ router.post('/', auth, adminOnly, async (req, res) => {
   }
 });
 
+// PUBLIC: Get blocks by societyId (for join flow - no auth required)
+router.get('/public/:societyId', async (req, res) => {
+  try {
+    const blocks = await Block.find({ societyId: req.params.societyId }).select('name _id description');
+    res.json(blocks);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 // Get all blocks of a society
 router.get('/society/:societyId', auth, async (req, res) => {
   try {
