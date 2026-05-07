@@ -230,11 +230,9 @@ const FlatDetail = () => {
                   <td>{p.paidDate ? new Date(p.paidDate).toLocaleDateString('en-IN') : '-'}</td>
                   <td>
                     <div className="btn-group">
-                      {p.status === 'paid' && (
                         <button className="btn--icon" onClick={() => handleDownloadReceipt(p)} title="Download Receipt">
                           📥
                         </button>
-                      )}
                       {isAdmin && p.status !== 'paid' && (
                         <button className="btn btn--sm btn--primary" onClick={() => handleRecordPayment(p)}>
                           💰 Record

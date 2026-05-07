@@ -55,6 +55,14 @@ const societySchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  contactNumber: {
+    type: String,
+    trim: true
+  },
+  upiId: {
+    type: String,
+    trim: true
+  },
   totalBlocks: {
     type: Number,
     default: 0

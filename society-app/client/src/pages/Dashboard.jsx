@@ -281,11 +281,9 @@ const Dashboard = () => {
                   <td><span className={`status-badge status-badge--${p.status}`}>{p.status}</span></td>
                   <td>{p.paidDate ? new Date(p.paidDate).toLocaleDateString('en-IN') : '-'}</td>
                   <td>
-                    {p.status === 'paid' && (
-                      <button className="btn--icon" onClick={() => handleDownloadReceipt(p)} title="Download Receipt">
-                        📥
-                      </button>
-                    )}
+                    <button className="btn--icon" onClick={() => handleDownloadReceipt(p)} title="Download Receipt">
+                      📥
+                    </button>
                   </td>
                 </tr>
               ))}

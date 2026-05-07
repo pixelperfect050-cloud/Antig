@@ -10,7 +10,9 @@ const Settings = () => {
     maintenanceAmount: user?.societyId?.maintenanceAmount || 3000,
     lateFeePerDay: user?.societyId?.lateFeePerDay || 50,
     lateFeeAfterDays: user?.societyId?.lateFeeAfterDays || 15,
-    billingDay: user?.societyId?.billingDay || 1
+    billingDay: user?.societyId?.billingDay || 1,
+    contactNumber: user?.societyId?.contactNumber || '',
+    upiId: user?.societyId?.upiId || ''
   });
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
@@ -104,6 +106,18 @@ const Settings = () => {
                 <label htmlFor="set-billing">Billing Day</label>
                 <input type="number" id="set-billing" min="1" max="28" value={societyForm.billingDay}
                   onChange={e => setSocietyForm({ ...societyForm, billingDay: parseInt(e.target.value) })} />
+              </div>
+            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="set-contact">Contact Number</label>
+                <input type="text" id="set-contact" value={societyForm.contactNumber}
+                  onChange={e => setSocietyForm({ ...societyForm, contactNumber: e.target.value })} placeholder="e.g. 9876543210" />
+              </div>
+              <div className="form-group">
+                <label htmlFor="set-upi">UPI ID (for payments)</label>
+                <input type="text" id="set-upi" value={societyForm.upiId}
+                  onChange={e => setSocietyForm({ ...societyForm, upiId: e.target.value })} placeholder="e.g. society@upi" />
               </div>
             </div>
             <div className="form-row">
