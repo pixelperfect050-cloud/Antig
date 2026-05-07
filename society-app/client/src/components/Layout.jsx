@@ -19,10 +19,10 @@ const Layout = () => {
   const menuItems = [
     { path: '/dashboard', icon: '📊', label: 'Dashboard' },
     { path: '/blocks', icon: '🏢', label: 'Blocks & Flats' },
-    { path: '/requests', icon: '👥', label: 'Member Requests', adminOnly: true },
-    { path: '/payments', icon: '💰', label: 'Payments' },
+    { path: '/payments', icon: '🏠', label: 'Maintenance' },
+    { path: '/funds', icon: '💰', label: 'Society Funds' },
     { path: '/payment-verification', icon: '✅', label: 'Verify Payments', adminOnly: true },
-    { path: '/funds', icon: '📢', label: 'Society Funds' },
+    { path: '/requests', icon: '👥', label: 'Member Requests', adminOnly: true },
     { path: '/expenses', icon: '📋', label: 'Expenses', adminOnly: true },
     { path: '/reports', icon: '📈', label: 'Reports' },
     { path: '/notifications', icon: '🔔', label: 'Notifications' },
