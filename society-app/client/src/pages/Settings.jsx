@@ -31,6 +31,17 @@ const Settings = () => {
     }
   };
 
+  const handleGenerateCode = async () => {
+    try {
+      const sid = user?.societyId?._id || user?.societyId;
+      const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+      await api.put(`/api/society/${sid}`, { inviteCode: code });
+      loadUser();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
   return (
     <div className="page">
       <div className="page-header">
@@ -38,6 +49,33 @@ const Settings = () => {
           <h1 className="page-title">Settings</h1>
           <p className="page-subtitle">Manage society settings</p>
         </div>
+        {user?.role === 'admin' && (
+          <div className="invite-box" style={{ 
+            background: 'var(--primary-glow)', 
+            padding: '1rem', 
+            borderRadius: '12px',
+            border: '1px solid var(--primary)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.5rem'
+          }}>
+            <span style={{ fontSize: '0.8rem', opacity: 0.8, fontWeight: 'bold' }}>SOCIETY INVITE CODE</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              {user?.societyId?.inviteCode ? (
+                <>
+                  <span style={{ fontSize: '1.5rem', fontWeight: '900', letterSpacing: '0.1rem' }}>{user.societyId.inviteCode}</span>
+                  <button className="btn btn--primary btn--sm" onClick={() => {
+                    const link = `${window.location.origin}/join/${user.societyId.inviteCode}`;
+                    navigator.clipboard.writeText(link);
+                    alert('Invite link copied to clipboard!');
+                  }}>🔗 Copy Link</button>
+                </>
+              ) : (
+                <button className="btn btn--primary btn--sm" onClick={handleGenerateCode}>✨ Generate Invite Code</button>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="settings-grid">

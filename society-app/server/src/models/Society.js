@@ -11,6 +11,11 @@ const societySchema = new mongoose.Schema({
     required: [true, 'Address is required'],
     trim: true
   },
+  inviteCode: {
+    type: String,
+    unique: true,
+    sparse: true
+  },
   city: {
     type: String,
     trim: true

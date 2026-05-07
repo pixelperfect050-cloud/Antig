@@ -155,7 +155,7 @@ const FlatDetail = () => {
           </div>
         </div>
 
-        <div className="card flat-summary-card">
+        <div className="card flat-summary-card premium-card">
           <h3 className="card-title">Payment Summary</h3>
           <div className="summary-stats">
             <div className="summary-stat summary-stat--paid">
@@ -164,10 +164,35 @@ const FlatDetail = () => {
             </div>
             <div className="summary-stat summary-stat--due">
               <span className="summary-label">Total Due</span>
-              <span className="summary-value">{formatCurrency(totalDue)}</span>
+              <span className="summary-value" style={{ color: totalDue > 0 ? 'var(--error)' : 'inherit' }}>{formatCurrency(totalDue)}</span>
             </div>
           </div>
-          <div className={`flat-status-badge flat-status-badge--${flat.currentMonthStatus}`}>
+          
+          {totalDue > 0 && !isAdmin && (
+            <div style={{ marginTop: '1.5rem', padding: '1rem', background: 'var(--primary-glow)', borderRadius: '12px', border: '1px solid var(--primary)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                <span style={{ fontSize: '1.5rem' }}>📱</span>
+                <div>
+                  <h4 style={{ fontSize: '0.9rem', fontWeight: '700' }}>Quick Pay via UPI</h4>
+                  <p style={{ fontSize: '0.7rem', opacity: 0.7 }}>Scan & pay instantly</p>
+                </div>
+              </div>
+              <div style={{ background: '#fff', padding: '1rem', borderRadius: '8px', display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
+                {/* Mock QR Code */}
+                <div style={{ width: '120px', height: '120px', background: '#f1f5f9', border: '8px solid #fff', borderRadius: '4px', position: 'relative', overflow: 'hidden' }}>
+                  <div style={{ position: 'absolute', inset: '10px', background: 'url("https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=upi://pay?pa=society@upi&am=' + totalDue + '&tn=Maintenance") center/cover no-repeat' }}></div>
+                  <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: '#fff', padding: '4px', borderRadius: '4px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+                    🏘️
+                  </div>
+                </div>
+              </div>
+              <button className="btn btn--primary btn--full" style={{ borderRadius: '25px' }}>
+                Open PhonePe / GPay
+              </button>
+            </div>
+          )}
+
+          <div className={`flat-status-badge flat-status-badge--${flat.currentMonthStatus}`} style={{ marginTop: totalDue > 0 && !isAdmin ? '1.5rem' : '1rem' }}>
             {flat.currentMonthStatus === 'paid' ? '✅ Current Month Paid' :
              flat.currentMonthStatus === 'partial' ? '🔶 Partially Paid' : '⏳ Payment Pending'}
           </div>

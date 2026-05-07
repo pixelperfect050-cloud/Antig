@@ -6,6 +6,7 @@ const Society = require('../models/Society');
 const { auth, adminOnly } = require('../middleware/auth');
 const { notifyFlatOwner, notifyAllUsers } = require('../utils/notificationHelper');
 const { generatePaymentReceipt } = require('../utils/pdfGenerator');
+const { emitToSociety } = require('../services/socketService');
 
 
 // Record payment
@@ -30,6 +31,13 @@ router.post('/', auth, adminOnly, async (req, res) => {
     });
 
     await payment.save();
+
+    // Real-time update via Socket.io
+    emitToSociety(societyId, 'payment_recorded', { 
+      payment, 
+      flatId,
+      message: `Payment of ₹${paidAmount} recorded for ${monthName} ${year}`
+    });
 
     // Notify flat owner
     const monthName = new Date(year, month - 1).toLocaleString('default', { month: 'long' });

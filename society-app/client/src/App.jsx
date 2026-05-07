@@ -14,10 +14,29 @@ import Notifications from './pages/Notifications';
 import Settings from './pages/Settings';
 import SetupSociety from './pages/SetupSociety';
 
-const ProtectedRoute = ({ children }) => {
+import JoinSociety from './pages/JoinSociety';
+import PendingApproval from './pages/PendingApproval';
+import MemberRequests from './pages/MemberRequests';
+
+const ProtectedRoute = ({ children, adminOnly = false }) => {
   const { user, loading } = useAuth();
   if (loading) return <div className="page-loader"><div className="spinner"></div></div>;
   if (!user) return <Navigate to="/login" />;
+  
+  // If user is pending approval, only allow them on the pending page
+  if (user.status === 'pending' && window.location.pathname !== '/pending-approval') {
+    return <Navigate to="/pending-approval" />;
+  }
+
+  // If approved user tries to go to pending page, send to dashboard
+  if (user.status === 'approved' && window.location.pathname === '/pending-approval') {
+    return <Navigate to="/dashboard" />;
+  }
+
+  if (adminOnly && user.role !== 'admin') {
+    return <Navigate to="/dashboard" />;
+  }
+
   return children;
 };
 
@@ -32,6 +51,15 @@ function App() {
     <Routes>
       <Route path="/login" element={user ? <Navigate to="/dashboard" /> : <Login />} />
       <Route path="/register" element={user ? <Navigate to="/dashboard" /> : <Register />} />
+      <Route path="/join" element={<JoinSociety />} />
+      <Route path="/join/:code" element={<JoinSociety />} />
+      
+      <Route path="/pending-approval" element={
+        <ProtectedRoute>
+          <PendingApproval />
+        </ProtectedRoute>
+      } />
+
       <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
         <Route index element={<Navigate to="/dashboard" />} />
         <Route path="dashboard" element={<Dashboard />} />
@@ -44,6 +72,7 @@ function App() {
         <Route path="notifications" element={<Notifications />} />
         <Route path="settings" element={<Settings />} />
         <Route path="setup" element={<SetupSociety />} />
+        <Route path="requests" element={<ProtectedRoute adminOnly><MemberRequests /></ProtectedRoute>} />
       </Route>
     </Routes>
   );

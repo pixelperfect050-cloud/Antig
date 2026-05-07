@@ -47,7 +47,8 @@ router.get('/stats/:societyId', auth, async (req, res) => {
     const partialFlats = await Flat.countDocuments({ societyId, currentMonthStatus: 'partial' });
 
     // Members count
-    const totalMembers = await User.countDocuments({ societyId });
+    const totalMembers = await User.countDocuments({ societyId, status: 'approved' });
+    const pendingMembersCount = await User.countDocuments({ societyId, status: 'pending' });
 
     // Block count
     const totalBlocks = await Block.countDocuments({ societyId });
@@ -99,6 +100,7 @@ router.get('/stats/:societyId', auth, async (req, res) => {
       pendingFlats,
       partialFlats,
       totalMembers,
+      pendingMembersCount,
       totalBlocks,
       monthlyTrend,
       expenseBreakdown

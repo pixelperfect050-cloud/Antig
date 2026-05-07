@@ -3,11 +3,17 @@ const express = require('express');
 const cors = require('cors');
 const connectDB = require('./src/config/db');
 const path = require('path');
+const http = require('http');
+const { initializeSocket } = require('./src/services/socketService');
 
 const app = express();
+const server = http.createServer(app);
 
 // Connect Database
 connectDB();
+
+// Initialize Socket.io
+initializeSocket(server);
 
 // CORS Configuration
 const allowedOrigins = [
@@ -64,6 +70,6 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
 });

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Notification = require('../models/Notification');
 const { auth, adminOnly } = require('../middleware/auth');
+const { emitToSociety } = require('../services/socketService');
 
 // Create notification
 router.post('/', auth, adminOnly, async (req, res) => {
@@ -11,6 +12,13 @@ router.post('/', auth, adminOnly, async (req, res) => {
       createdBy: req.user._id
     });
     await notification.save();
+
+    // Real-time update
+    emitToSociety(notification.societyId.toString(), 'notification_received', { 
+      notification,
+      message: notification.title
+    });
+
     res.status(201).json(notification);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });

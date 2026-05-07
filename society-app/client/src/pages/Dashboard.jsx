@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useSocket } from '../context/SocketContext';
 import StatsCard from '../components/StatsCard';
 import api from '../utils/api';
 
@@ -7,6 +9,8 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const socket = useSocket();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const isAdmin = user?.role === 'admin';
@@ -14,6 +18,20 @@ const Dashboard = () => {
   useEffect(() => {
     fetchStats();
   }, []);
+
+  useEffect(() => {
+    if (socket) {
+      const handleSync = () => fetchStats();
+      socket.on('payment_recorded', handleSync);
+      socket.on('expense_added', handleSync);
+      socket.on('user_status_updated', handleSync);
+      return () => {
+        socket.off('payment_recorded', handleSync);
+        socket.off('expense_added', handleSync);
+        socket.off('user_status_updated', handleSync);
+      };
+    }
+  }, [socket]);
 
   const fetchStats = async () => {
     try {
@@ -207,6 +225,18 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
+
+        {isAdmin && stats.pendingMembersCount > 0 && (
+          <div className="alert alert--info" style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            marginBottom: '2rem' 
+          }}>
+            <span>👋 You have <strong>{stats.pendingMembersCount}</strong> new resident join requests waiting for your approval.</span>
+            <button className="btn btn--primary btn--sm" onClick={() => navigate('/requests')}>Review Requests</button>
+          </div>
+        )}
       </div>
     );
   }

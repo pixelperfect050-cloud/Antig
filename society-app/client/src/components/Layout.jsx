@@ -19,6 +19,7 @@ const Layout = () => {
   const menuItems = [
     { path: '/dashboard', icon: '📊', label: 'Dashboard' },
     { path: '/blocks', icon: '🏢', label: 'Blocks & Flats' },
+    { path: '/requests', icon: '👥', label: 'Member Requests', adminOnly: true },
     { path: '/payments', icon: '💰', label: 'Payments' },
     { path: '/expenses', icon: '📋', label: 'Expenses', adminOnly: true },
     { path: '/reports', icon: '📈', label: 'Reports' },
@@ -86,6 +87,20 @@ const Layout = () => {
 
       {/* Overlay */}
       {sidebarOpen && <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />}
+
+      {/* Bottom Navigation for Mobile */}
+      <nav className="bottom-nav">
+        {menuItems.slice(0, 5).map(item => (
+          <NavLink
+            key={item.path}
+            to={item.path}
+            className={({ isActive }) => `bottom-nav-item ${isActive ? 'active' : ''}`}
+          >
+            <span className="bottom-nav-icon">{item.icon}</span>
+            <span className="bottom-nav-label">{item.label.split(' ')[0]}</span>
+          </NavLink>
+        ))}
+      </nav>
 
       {/* Main Content */}
       <main className="main-content">

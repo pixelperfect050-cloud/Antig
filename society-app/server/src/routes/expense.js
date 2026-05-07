@@ -3,6 +3,7 @@ const router = express.Router();
 const Expense = require('../models/Expense');
 const { auth, adminOnly } = require('../middleware/auth');
 const { notifyAllUsers } = require('../utils/notificationHelper');
+const { emitToSociety } = require('../services/socketService');
 
 // Add expense
 router.post('/', auth, adminOnly, async (req, res) => {
@@ -12,6 +13,12 @@ router.post('/', auth, adminOnly, async (req, res) => {
       addedBy: req.user._id
     });
     await expense.save();
+
+    // Real-time update
+    emitToSociety(expense.societyId.toString(), 'expense_added', { 
+      expense,
+      message: `New expense of ₹${expense.amount} added for ${expense.category}`
+    });
 
     // Notify all users about the new expense
     await notifyAllUsers({

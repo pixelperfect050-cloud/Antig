@@ -79,23 +79,57 @@ const FlatGrid = () => {
         ))}
       </div>
 
+      {/* Visual Legend */}
+      <div className="flat-grid-legend" style={{ marginBottom: '1.5rem', display: 'flex', gap: '1rem', flexWrap: 'wrap', padding: '1rem', background: 'var(--bg-input)', borderRadius: '12px' }}>
+        <div className="legend-item-flat"><span className="legend-color" style={{ background: '#10b981' }}></span> Paid</div>
+        <div className="legend-item-flat"><span className="legend-color" style={{ background: '#ef4444' }}></span> Pending</div>
+        <div className="legend-item-flat"><span className="legend-color" style={{ background: '#f59e0b' }}></span> Partial</div>
+        <div className="legend-item-flat"><span className="legend-color" style={{ background: 'var(--text-muted)' }}></span> Vacant</div>
+      </div>
+
       {/* Flat Grid by Floor */}
-      <div className="floor-grid">
+      <div className="floor-sections">
         {Object.keys(floors).sort((a, b) => b - a).map(floor => (
-          <div key={floor} className="floor-row">
-            <div className="floor-label">Floor {floor}</div>
-            <div className="flat-grid">
+          <div key={floor} className="floor-section" style={{ marginBottom: '2rem' }}>
+            <h3 style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '0.75rem', paddingLeft: '0.5rem', borderLeft: '3px solid var(--primary)' }}>FLOOR {floor}</h3>
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(auto-fill, minmax(70px, 1fr))', 
+              gap: '0.75rem',
+              padding: '0.5rem'
+            }}>
               {floors[floor].map(flat => (
                 <div key={flat._id}
-                  className={`flat-card flat-card--${flat.currentMonthStatus}`}
                   onClick={() => navigate(`/flats/${flat._id}`)}
+                  style={{
+                    aspectRatio: '1',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRadius: '12px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                    background: flat.currentMonthStatus === 'paid' ? 'rgba(16, 185, 129, 0.1)' : 
+                               flat.currentMonthStatus === 'pending' ? 'rgba(239, 68, 68, 0.1)' :
+                               flat.currentMonthStatus === 'partial' ? 'rgba(245, 158, 11, 0.1)' : 'var(--bg-input)',
+                    border: `2px solid ${
+                      flat.currentMonthStatus === 'paid' ? '#10b981' : 
+                      flat.currentMonthStatus === 'pending' ? '#ef4444' :
+                      flat.currentMonthStatus === 'partial' ? '#f59e0b' : 'var(--border)'
+                    }`,
+                    color: flat.currentMonthStatus === 'paid' ? '#10b981' : 
+                           flat.currentMonthStatus === 'pending' ? '#ef4444' :
+                           flat.currentMonthStatus === 'partial' ? '#f59e0b' : 'var(--text-muted)',
+                    boxShadow: 'var(--shadow)'
+                  }}
+                  onMouseOver={(e) => { e.currentTarget.style.transform = 'scale(1.1)'; e.currentTarget.style.boxShadow = 'var(--shadow-lg)'; }}
+                  onMouseOut={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'var(--shadow)'; }}
                   id={`flat-${flat.number}`}>
-                  <div className="flat-card__number">{flat.number}</div>
-                  <div className="flat-card__owner">{flat.ownerName}</div>
-                  <div className="flat-card__type">{flat.type}</div>
-                  <div className={`flat-card__status flat-card__status--${flat.currentMonthStatus}`}>
-                    {flat.currentMonthStatus === 'paid' ? '✓' : flat.currentMonthStatus === 'partial' ? '◐' : '!'}
-                  </div>
+                  <span style={{ fontSize: '1rem', fontWeight: '800' }}>{flat.number}</span>
+                  <span style={{ fontSize: '0.5rem', opacity: 0.7, textTransform: 'uppercase', fontWeight: 'bold' }}>
+                    {flat.isOccupied ? (flat.ownerName?.split(' ')[0] || 'Member') : 'Vacant'}
+                  </span>
                 </div>
               ))}
             </div>

@@ -1,15 +1,38 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useSocket } from '../context/SocketContext';
 import api from '../utils/api';
 
 const Notifications = () => {
   const { user } = useAuth();
+  const socket = useSocket();
   const [data, setData] = useState({ notifications: [], unreadCount: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchNotifications();
   }, []);
+
+  useEffect(() => {
+    if (socket) {
+      const handleSocketEvent = (eventData) => {
+        console.log('Socket event received:', eventData);
+        fetchNotifications();
+      };
+
+      socket.on('notification_received', handleSocketEvent);
+      socket.on('payment_recorded', handleSocketEvent);
+      socket.on('expense_added', handleSocketEvent);
+      socket.on('user_status_updated', handleSocketEvent);
+
+      return () => {
+        socket.off('notification_received', handleSocketEvent);
+        socket.off('payment_recorded', handleSocketEvent);
+        socket.off('expense_added', handleSocketEvent);
+        socket.off('user_status_updated', handleSocketEvent);
+      };
+    }
+  }, [socket]);
 
   const fetchNotifications = async () => {
     try {

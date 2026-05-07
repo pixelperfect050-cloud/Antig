@@ -104,21 +104,25 @@ const Reports = () => {
         <>
           {/* Summary Cards */}
           <div className="report-summary">
-            <div className="report-summary-card report-summary--collected">
+            <div className="report-summary-card report-summary--collected premium-card">
+              <span style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>💰</span>
               <span className="rs-label">Collected</span>
-              <span className="rs-value">{formatCurrency(data.summary?.totalCollected)}</span>
+              <span className="rs-value" style={{ color: 'var(--success)' }}>{formatCurrency(data.summary?.totalCollected)}</span>
             </div>
-            <div className="report-summary-card report-summary--due">
+            <div className="report-summary-card report-summary--due premium-card">
+              <span style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>⏳</span>
               <span className="rs-label">Pending</span>
-              <span className="rs-value">{formatCurrency(data.summary?.totalDue)}</span>
+              <span className="rs-value" style={{ color: 'var(--error)' }}>{formatCurrency(data.summary?.totalDue)}</span>
             </div>
-            <div className="report-summary-card report-summary--expense">
+            <div className="report-summary-card report-summary--expense premium-card">
+              <span style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>📉</span>
               <span className="rs-label">Expenses</span>
-              <span className="rs-value">{formatCurrency(data.summary?.totalExpenses)}</span>
+              <span className="rs-value" style={{ color: 'var(--warning)' }}>{formatCurrency(data.summary?.totalExpenses)}</span>
             </div>
-            <div className="report-summary-card report-summary--net">
+            <div className="report-summary-card report-summary--net premium-card">
+              <span style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>🏦</span>
               <span className="rs-label">Net Balance</span>
-              <span className="rs-value">{formatCurrency(data.summary?.netBalance)}</span>
+              <span className="rs-value" style={{ color: 'var(--primary)' }}>{formatCurrency(data.summary?.netBalance)}</span>
             </div>
           </div>
 

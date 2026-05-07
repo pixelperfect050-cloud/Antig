@@ -29,6 +29,16 @@ const userSchema = new mongoose.Schema({
     enum: ['admin', 'member'],
     default: 'member'
   },
+  status: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected', 'suspended'],
+    default: 'approved' // Default for creator is approved
+  },
+  residentType: {
+    type: String,
+    enum: ['owner', 'tenant', 'none'],
+    default: 'none'
+  },
   societyId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Society'

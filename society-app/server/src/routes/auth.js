@@ -7,14 +7,36 @@ const { auth } = require('../middleware/auth');
 // Register
 router.post('/register', async (req, res) => {
   try {
-    const { name, email, phone, password, role } = req.body;
+    const { name, email, phone, password, role, inviteCode, flatId, residentType } = req.body;
 
     let user = await User.findOne({ email });
     if (user) {
       return res.status(400).json({ message: 'User already exists with this email' });
     }
 
-    user = new User({ name, email, phone, password, role: role || 'member' });
+    let societyId = null;
+    let status = 'approved'; // Default for admin if creating first time
+
+    if (role === 'member') {
+      const society = await require('../models/Society').findOne({ inviteCode: inviteCode.toUpperCase() });
+      if (!society) {
+        return res.status(400).json({ message: 'Invalid invite code' });
+      }
+      societyId = society._id;
+      status = 'pending';
+    }
+
+    user = new User({ 
+      name, 
+      email, 
+      phone, 
+      password, 
+      role: role || 'member',
+      societyId,
+      flatId,
+      residentType: residentType || 'none',
+      status
+    });
     await user.save();
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '30d' });
