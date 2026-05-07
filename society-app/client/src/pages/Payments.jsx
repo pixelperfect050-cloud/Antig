@@ -57,6 +57,15 @@ const Payments = () => {
 
   const formatCurrency = (amt) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amt || 0);
 
+  const handleDownloadReceipt = async (p) => {
+    try {
+      await api.download(`/api/payments/${p._id}/receipt`, `Receipt_${p.month}_${p.year}_Flat_${p.flatId?.number || 'NA'}.pdf`);
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+
   const filtered = filter === 'all' ? payments : payments.filter(p => p.status === filter);
   const totalCollected = payments.reduce((s, p) => s + p.paidAmount, 0);
   const totalDue = payments.reduce((s, p) => s + Math.max(0, p.amount - p.paidAmount), 0);
@@ -124,6 +133,7 @@ const Payments = () => {
                 <th>Status</th>
                 <th>Method</th>
                 <th>Date</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -136,10 +146,17 @@ const Payments = () => {
                   <td><span className={`status-badge status-badge--${p.status}`}>{p.status}</span></td>
                   <td>{p.paymentMethod || '-'}</td>
                   <td>{p.paidDate ? new Date(p.paidDate).toLocaleDateString('en-IN') : '-'}</td>
+                  <td>
+                    {p.status === 'paid' && (
+                      <button className="btn--icon" onClick={() => handleDownloadReceipt(p)} title="Download Receipt">
+                        📥
+                      </button>
+                    )}
+                  </td>
                 </tr>
               ))}
               {filtered.length === 0 && (
-                <tr><td colSpan="7" className="text-center text-muted">No payments found</td></tr>
+                <tr><td colSpan="8" className="text-center text-muted">No payments found</td></tr>
               )}
             </tbody>
           </table>

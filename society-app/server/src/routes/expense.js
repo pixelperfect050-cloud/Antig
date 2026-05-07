@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Expense = require('../models/Expense');
 const { auth, adminOnly } = require('../middleware/auth');
+const { notifyAllUsers } = require('../utils/notificationHelper');
 
 // Add expense
 router.post('/', auth, adminOnly, async (req, res) => {
@@ -11,6 +12,15 @@ router.post('/', auth, adminOnly, async (req, res) => {
       addedBy: req.user._id
     });
     await expense.save();
+
+    // Notify all users about the new expense
+    await notifyAllUsers({
+      societyId: expense.societyId,
+      title: 'New Expense Recorded',
+      message: `${expense.category}: ₹${expense.amount} for ${expense.description}`,
+      type: 'expense_update'
+    });
+
     res.status(201).json(expense);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });

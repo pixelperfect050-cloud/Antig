@@ -45,7 +45,9 @@ const Notifications = () => {
     expense_update: '📋',
     announcement: '📢',
     maintenance: '🔧',
-    general: '📌'
+    general: '📌',
+    success: '✅',
+    info: 'ℹ️'
   };
 
   if (loading) return <div className="page-loader"><div className="spinner"></div></div>;

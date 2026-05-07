@@ -45,11 +45,25 @@ const FlatDetail = () => {
 
   const handleRecordPayment = (payment) => {
     setSelectedPayment(payment);
+    
+    // Calculate late fee if applicable
+    let suggestedLateFee = 0;
+    if (data.society && data.society.lateFeePerDay > 0) {
+      const dueDate = new Date(payment.year, payment.month - 1, data.society.lateFeeAfterDays || 15);
+      const today = new Date();
+      if (today > dueDate) {
+        const diffTime = Math.abs(today - dueDate);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        suggestedLateFee = diffDays * data.society.lateFeePerDay;
+      }
+    }
+
     setPaymentForm({
       paidAmount: payment.amount - payment.paidAmount,
       paymentMethod: 'cash',
       transactionId: '',
-      notes: ''
+      notes: '',
+      lateFee: suggestedLateFee
     });
     setShowPaymentModal(true);
   };
@@ -62,7 +76,8 @@ const FlatDetail = () => {
         paidAmount: selectedPayment.paidAmount + parseFloat(paymentForm.paidAmount),
         paymentMethod: paymentForm.paymentMethod,
         transactionId: paymentForm.transactionId,
-        notes: paymentForm.notes
+        notes: paymentForm.notes,
+        lateFee: parseFloat(paymentForm.lateFee || 0)
       });
       setShowPaymentModal(false);
       fetchFlatDetail();
@@ -90,6 +105,15 @@ const FlatDetail = () => {
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount || 0);
   };
+
+  const handleDownloadReceipt = async (p) => {
+    try {
+      await api.download(`/api/payments/${p._id}/receipt`, `Receipt_${p.month}_${p.year}_Flat_${data.flat.number}.pdf`);
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
 
   if (loading) return <div className="page-loader"><div className="spinner"></div></div>;
   if (!data) return <div className="empty-state"><h2>Flat not found</h2></div>;
@@ -166,7 +190,7 @@ const FlatDetail = () => {
                 <th>Status</th>
                 <th>Method</th>
                 <th>Date</th>
-                {isAdmin && <th>Action</th>}
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -179,19 +203,24 @@ const FlatDetail = () => {
                   <td><span className={`status-badge status-badge--${p.status}`}>{p.status}</span></td>
                   <td>{p.paymentMethod || '-'}</td>
                   <td>{p.paidDate ? new Date(p.paidDate).toLocaleDateString('en-IN') : '-'}</td>
-                  {isAdmin && (
-                    <td>
-                      {p.status !== 'paid' && (
+                  <td>
+                    <div className="btn-group">
+                      {p.status === 'paid' && (
+                        <button className="btn--icon" onClick={() => handleDownloadReceipt(p)} title="Download Receipt">
+                          📥
+                        </button>
+                      )}
+                      {isAdmin && p.status !== 'paid' && (
                         <button className="btn btn--sm btn--primary" onClick={() => handleRecordPayment(p)}>
                           💰 Record
                         </button>
                       )}
-                    </td>
-                  )}
+                    </div>
+                  </td>
                 </tr>
               ))}
               {(!payments || payments.length === 0) && (
-                <tr><td colSpan={isAdmin ? 8 : 7} className="text-center text-muted">No payment records</td></tr>
+                <tr><td colSpan={8} className="text-center text-muted">No payment records</td></tr>
               )}
             </tbody>
           </table>
@@ -205,10 +234,17 @@ const FlatDetail = () => {
             <p>Recording for: <strong>{MONTHS[(selectedPayment?.month || 1) - 1]} {selectedPayment?.year}</strong></p>
             <p>Remaining: <strong>{formatCurrency((selectedPayment?.amount || 0) - (selectedPayment?.paidAmount || 0))}</strong></p>
           </div>
-          <div className="form-group">
-            <label htmlFor="pay-amount">Amount Paid</label>
-            <input type="number" id="pay-amount" min="1" value={paymentForm.paidAmount}
-              onChange={e => setPaymentForm({ ...paymentForm, paidAmount: e.target.value })} required />
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="pay-amount">Amount Paid</label>
+              <input type="number" id="pay-amount" min="1" value={paymentForm.paidAmount}
+                onChange={e => setPaymentForm({ ...paymentForm, paidAmount: e.target.value })} required />
+            </div>
+            <div className="form-group">
+              <label htmlFor="pay-latefee">Late Fee (₹)</label>
+              <input type="number" id="pay-latefee" min="0" value={paymentForm.lateFee}
+                onChange={e => setPaymentForm({ ...paymentForm, lateFee: e.target.value })} />
+            </div>
           </div>
           <div className="form-group">
             <label htmlFor="pay-method">Payment Method</label>

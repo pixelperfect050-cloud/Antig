@@ -1,5 +1,10 @@
 {
-  "dependencies": {
-    "razorpay": "^2.9.6"
+  "name": "projects-root",
+  "version": "1.0.0",
+  "scripts": {
+    "artflow-dev": "cd artflow-studio/server && npm run dev",
+    "artflow-client": "cd artflow-studio/client && npm run dev",
+    "society-dev": "cd society-app/server && npm run dev",
+    "society-client": "cd society-app/client && npm run dev"
   }
 }

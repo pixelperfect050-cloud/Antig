@@ -36,6 +36,14 @@ const Dashboard = () => {
     return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount || 0);
   };
 
+  const handleDownloadReceipt = async (p) => {
+    try {
+      await api.download(`/api/payments/${p._id}/receipt`, `Receipt_${p.month}_${p.year}.pdf`);
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
   if (loading) return <div className="page-loader"><div className="spinner"></div></div>;
 
   if (!user?.societyId) {
@@ -231,6 +239,7 @@ const Dashboard = () => {
                 <th>Paid</th>
                 <th>Status</th>
                 <th>Date</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -241,10 +250,17 @@ const Dashboard = () => {
                   <td>{formatCurrency(p.paidAmount)}</td>
                   <td><span className={`status-badge status-badge--${p.status}`}>{p.status}</span></td>
                   <td>{p.paidDate ? new Date(p.paidDate).toLocaleDateString('en-IN') : '-'}</td>
+                  <td>
+                    {p.status === 'paid' && (
+                      <button className="btn--icon" onClick={() => handleDownloadReceipt(p)} title="Download Receipt">
+                        📥
+                      </button>
+                    )}
+                  </td>
                 </tr>
               ))}
               {(!stats?.payments || stats.payments.length === 0) && (
-                <tr><td colSpan="5" className="text-center text-muted">No payment records</td></tr>
+                <tr><td colSpan="6" className="text-center text-muted">No payment records</td></tr>
               )}
             </tbody>
           </table>

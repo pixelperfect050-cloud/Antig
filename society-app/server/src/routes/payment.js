@@ -2,7 +2,11 @@ const express = require('express');
 const router = express.Router();
 const Payment = require('../models/Payment');
 const Flat = require('../models/Flat');
+const Society = require('../models/Society');
 const { auth, adminOnly } = require('../middleware/auth');
+const { notifyFlatOwner, notifyAllUsers } = require('../utils/notificationHelper');
+const { generatePaymentReceipt } = require('../utils/pdfGenerator');
+
 
 // Record payment
 router.post('/', auth, adminOnly, async (req, res) => {
@@ -26,6 +30,17 @@ router.post('/', auth, adminOnly, async (req, res) => {
     });
 
     await payment.save();
+
+    // Notify flat owner
+    const monthName = new Date(year, month - 1).toLocaleString('default', { month: 'long' });
+    await notifyFlatOwner({
+      flatId,
+      societyId,
+      title: 'Payment Recorded',
+      message: `A payment of ₹${paidAmount} has been recorded for ${monthName} ${year}.`,
+      type: 'success'
+    });
+
 
     // Update flat's current month status
     const now = new Date();
@@ -72,7 +87,17 @@ router.post('/generate-bills', auth, adminOnly, async (req, res) => {
         { _id: { $in: newFlatIds } },
         { currentMonthStatus: 'pending' }
       );
+
+      // Notify all users about new bills
+      const monthName = new Date(year, month - 1).toLocaleString('default', { month: 'long' });
+      await notifyAllUsers({
+        societyId,
+        title: 'Maintenance Bills Generated',
+        message: `Maintenance bills of ₹${amount} for ${monthName} ${year} have been generated. Please check your dues.`,
+        type: 'info'
+      });
     }
+
 
     res.json({ message: `Bills generated for ${newPayments.length} flats`, count: newPayments.length });
   } catch (error) {
@@ -83,7 +108,7 @@ router.post('/generate-bills', auth, adminOnly, async (req, res) => {
 // Update payment
 router.put('/:id', auth, adminOnly, async (req, res) => {
   try {
-    const { paidAmount, paymentMethod, transactionId, notes } = req.body;
+    const { paidAmount, paymentMethod, transactionId, notes, lateFee } = req.body;
     const payment = await Payment.findById(req.params.id);
     if (!payment) return res.status(404).json({ message: 'Payment not found' });
 
@@ -91,6 +116,7 @@ router.put('/:id', auth, adminOnly, async (req, res) => {
     payment.paymentMethod = paymentMethod || payment.paymentMethod;
     payment.transactionId = transactionId || payment.transactionId;
     payment.notes = notes || payment.notes;
+    if (lateFee !== undefined) payment.lateFee = lateFee;
 
     const totalAmount = payment.amount + payment.lateFee;
     if (paidAmount >= totalAmount) payment.status = 'paid';
@@ -100,6 +126,17 @@ router.put('/:id', auth, adminOnly, async (req, res) => {
     if (paidAmount > 0) payment.paidDate = new Date();
 
     await payment.save();
+
+    // Notify flat owner
+    const monthName = new Date(payment.year, payment.month - 1).toLocaleString('default', { month: 'long' });
+    await notifyFlatOwner({
+      flatId: payment.flatId,
+      societyId: payment.societyId,
+      title: 'Payment Updated',
+      message: `Your payment for ${monthName} ${payment.year} has been updated. Paid: ₹${paidAmount}.`,
+      type: 'success'
+    });
+
 
     // Update flat status
     const now = new Date();
@@ -157,4 +194,32 @@ router.get('/pending/:societyId', auth, async (req, res) => {
   }
 });
 
+// Download Receipt PDF
+router.get('/:id/receipt', auth, async (req, res) => {
+  try {
+    const payment = await Payment.findById(req.params.id);
+    if (!payment) return res.status(404).json({ message: 'Payment not found' });
+
+    // Ensure user has access (admin or flat owner)
+    if (req.user.role !== 'admin' && req.user.flatId?.toString() !== payment.flatId.toString()) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    const [society, flat] = await Promise.all([
+      Society.findById(payment.societyId),
+      Flat.findById(payment.flatId).populate('blockId', 'name')
+    ]);
+
+    const pdfBuffer = await generatePaymentReceipt(payment, society, flat);
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=Receipt_${payment.month}_${payment.year}.pdf`);
+    res.send(pdfBuffer);
+  } catch (error) {
+    console.error('PDF Error:', error);
+    res.status(500).json({ message: 'Error generating PDF', error: error.message });
+  }
+});
+
 module.exports = router;
+

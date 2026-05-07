@@ -1,0 +1,6 @@
+{
+  "appId": "com.society.app",
+  "appName": "Society App",
+  "webDir": "dist",
+  "bundledWebRuntime": false
+}

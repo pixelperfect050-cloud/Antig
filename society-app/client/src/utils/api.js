@@ -41,7 +41,20 @@ const api = {
       headers: getHeaders()
     });
     return handleResponse(res);
+  },
+  download: async (url, filename) => {
+    const res = await fetch(`${API_BASE}${url}`, { headers: getHeaders() });
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.message || 'Download failed');
+    }
+    const blob = await res.blob();
+    const link = document.createElement('a');
+    link.href = window.URL.createObjectURL(blob);
+    link.download = filename;
+    link.click();
   }
 };
+
 
 export default api;
