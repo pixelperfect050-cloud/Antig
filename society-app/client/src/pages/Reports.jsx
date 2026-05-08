@@ -63,35 +63,43 @@ const Reports = () => {
 
   return (
     <div className="page">
-      <div className="page-header">
-        <div>
+      <header className="page-header">
+        <div className="page-title-group">
           <h1 className="page-title">Reports</h1>
-          <p className="page-subtitle">Generate and export reports</p>
+          <p className="page-subtitle">Insights & financial statements</p>
         </div>
-        <button className="btn btn--outline" onClick={exportCSV} id="export-csv-btn">
-          📥 Export CSV
-        </button>
-      </div>
+        <div className="page-actions mt-3 sm:mt-0">
+          <button className="btn btn--outline btn--sm w-full sm:w-auto" onClick={exportCSV}>
+            📥 Export CSV
+          </button>
+        </div>
+      </header>
 
-      {/* Report Type Tabs */}
-      <div className="report-tabs">
-        <button className={`report-tab ${reportType === 'monthly' ? 'active' : ''}`}
-          onClick={() => setReportType('monthly')} id="monthly-report-tab">
-          📅 Monthly Report
-        </button>
-        <button className={`report-tab ${reportType === 'flatwise' ? 'active' : ''}`}
-          onClick={() => setReportType('flatwise')} id="flatwise-report-tab">
-          🏠 Flat-wise Report
-        </button>
+      {/* Responsive Report Tabs */}
+      <div className="card mb-6">
+        <div className="p-2 flex gap-2">
+          <button 
+            className={`flex-1 py-3 px-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${reportType === 'monthly' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-slate-50 text-secondary hover:bg-slate-100'}`}
+            onClick={() => setReportType('monthly')}
+          >
+            📅 Monthly
+          </button>
+          <button 
+            className={`flex-1 py-3 px-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${reportType === 'flatwise' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-slate-50 text-secondary hover:bg-slate-100'}`}
+            onClick={() => setReportType('flatwise')}
+          >
+            🏠 Flat-wise
+          </button>
+        </div>
       </div>
 
       {reportType === 'monthly' && (
-        <div className="filters-bar">
-          <div className="filter-group">
-            <select value={monthFilter} onChange={e => setMonthFilter(parseInt(e.target.value))} className="filter-select">
+        <div className="card mb-6">
+          <div className="p-4 flex gap-4">
+            <select value={monthFilter} onChange={e => setMonthFilter(parseInt(e.target.value))} className="flex-1 min-h-[48px] rounded-xl border-slate-200 bg-slate-50 font-bold px-4">
               {MONTHS.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
             </select>
-            <select value={yearFilter} onChange={e => setYearFilter(parseInt(e.target.value))} className="filter-select">
+            <select value={yearFilter} onChange={e => setYearFilter(parseInt(e.target.value))} className="w-32 min-h-[48px] rounded-xl border-slate-200 bg-slate-50 font-bold px-4">
               {[2024, 2025, 2026, 2027].map(y => <option key={y} value={y}>{y}</option>)}
             </select>
           </div>
@@ -102,32 +110,43 @@ const Reports = () => {
         <div className="page-loader"><div className="spinner"></div></div>
       ) : reportType === 'monthly' && data ? (
         <>
-          {/* Summary Cards */}
-          <div className="report-summary">
-            <div className="report-summary-card report-summary--collected premium-card">
-              <span style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>💰</span>
-              <span className="rs-label">Collected</span>
-              <span className="rs-value" style={{ color: 'var(--success)' }}>{formatCurrency(data.summary?.totalCollected)}</span>
+          {/* Summary Stats Grid */}
+          <div className="stats-grid mb-6">
+            <div className="stats-card stats-card--success">
+              <div className="stats-card__icon">💰</div>
+              <div className="stats-card__content">
+                <span className="stats-card__label">Collected</span>
+                <span className="stats-card__value text-lg">{formatCurrency(data.summary?.totalCollected)}</span>
+              </div>
             </div>
-            <div className="report-summary-card report-summary--due premium-card">
-              <span style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>⏳</span>
-              <span className="rs-label">Pending</span>
-              <span className="rs-value" style={{ color: 'var(--error)' }}>{formatCurrency(data.summary?.totalDue)}</span>
+            <div className="stats-card stats-card--danger">
+              <div className="stats-card__icon">⏳</div>
+              <div className="stats-card__content">
+                <span className="stats-card__label">Pending</span>
+                <span className="stats-card__value text-lg">{formatCurrency(data.summary?.totalDue)}</span>
+              </div>
             </div>
-            <div className="report-summary-card report-summary--expense premium-card">
-              <span style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>📉</span>
-              <span className="rs-label">Expenses</span>
-              <span className="rs-value" style={{ color: 'var(--warning)' }}>{formatCurrency(data.summary?.totalExpenses)}</span>
+            <div className="stats-card stats-card--warning">
+              <div className="stats-card__icon">📉</div>
+              <div className="stats-card__content">
+                <span className="stats-card__label">Expenses</span>
+                <span className="stats-card__value text-lg">{formatCurrency(data.summary?.totalExpenses)}</span>
+              </div>
             </div>
-            <div className="report-summary-card report-summary--net premium-card">
-              <span style={{ fontSize: '1.5rem', marginBottom: '0.5rem' }}>🏦</span>
-              <span className="rs-label">Net Balance</span>
-              <span className="rs-value" style={{ color: 'var(--primary)' }}>{formatCurrency(data.summary?.netBalance)}</span>
+            <div className="stats-card stats-card--primary">
+              <div className="stats-card__icon">🏦</div>
+              <div className="stats-card__content">
+                <span className="stats-card__label">Net Balance</span>
+                <span className="stats-card__value text-lg">{formatCurrency(data.summary?.netBalance)}</span>
+              </div>
             </div>
           </div>
 
           <div className="card">
-            <h3 className="card-title" style={{ padding: '1rem 1.5rem 0' }}>Payment Records</h3>
+            <div className="card-header">
+              <h3 className="card-title">Payment Logs</h3>
+              <span className="card-badge">{data.payments?.length || 0} Records</span>
+            </div>
             <div className="table-wrapper">
               <table className="table">
                 <thead>
@@ -136,21 +155,26 @@ const Reports = () => {
                     <th>Amount</th>
                     <th>Paid</th>
                     <th>Status</th>
-                    <th>Method</th>
-                    <th>Date</th>
+                    <th>Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {data.payments?.map((p, i) => (
                     <tr key={i}>
-                      <td className="font-medium">{p.flatId?.number || '-'}</td>
-                      <td>{formatCurrency(p.amount)}</td>
-                      <td className="text-success">{formatCurrency(p.paidAmount)}</td>
+                      <td className="font-bold">{p.flatId?.number || '-'}</td>
+                      <td className="font-black">{formatCurrency(p.amount)}</td>
+                      <td className="text-emerald-600 font-bold">{formatCurrency(p.paidAmount)}</td>
                       <td><span className={`status-badge status-badge--${p.status}`}>{p.status}</span></td>
-                      <td>{p.paymentMethod || '-'}</td>
-                      <td>{p.paidDate ? new Date(p.paidDate).toLocaleDateString('en-IN') : '-'}</td>
+                      <td>
+                        <span className="text-[10px] font-bold text-secondary uppercase truncate max-w-[80px] inline-block">
+                          {p.paymentMethod || '-'}
+                        </span>
+                      </td>
                     </tr>
                   ))}
+                  {(!data.payments || data.payments.length === 0) && (
+                    <tr><td colSpan={5} className="text-center p-12 text-secondary">No records for this period.</td></tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -158,28 +182,38 @@ const Reports = () => {
         </>
       ) : Array.isArray(data) ? (
         <div className="card">
+          <div className="card-header">
+            <h3 className="card-title">Unit-wise Performance</h3>
+            <span className="card-badge">{data.length} Units</span>
+          </div>
           <div className="table-wrapper">
             <table className="table">
               <thead>
                 <tr>
-                  <th>Flat</th>
-                  <th>Block</th>
+                  <th>Unit</th>
                   <th>Owner</th>
-                  <th>Phone</th>
-                  <th>Total Paid</th>
-                  <th>Total Due</th>
+                  <th>Paid</th>
+                  <th>Due</th>
                   <th>Status</th>
                 </tr>
               </thead>
               <tbody>
                 {data.map((r, i) => (
                   <tr key={i}>
-                    <td className="font-medium">{r.flatNumber}</td>
-                    <td>{r.blockName}</td>
-                    <td>{r.ownerName}</td>
-                    <td>{r.phone}</td>
-                    <td className="text-success">{formatCurrency(r.totalPaid)}</td>
-                    <td className="text-danger">{formatCurrency(r.totalDue)}</td>
+                    <td>
+                      <div className="flex flex-col">
+                        <span className="font-black text-primary">{r.flatNumber}</span>
+                        <span className="text-[10px] font-bold text-secondary uppercase">{r.blockName}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="flex flex-col truncate max-w-[120px]">
+                        <span className="font-bold text-sm truncate">{r.ownerName}</span>
+                        <span className="text-[10px] text-secondary">{r.phone || '-'}</span>
+                      </div>
+                    </td>
+                    <td className="text-emerald-600 font-bold">{formatCurrency(r.totalPaid)}</td>
+                    <td className="text-rose-500 font-bold">{formatCurrency(r.totalDue)}</td>
                     <td><span className={`status-badge status-badge--${r.currentStatus}`}>{r.currentStatus}</span></td>
                   </tr>
                 ))}
@@ -187,7 +221,15 @@ const Reports = () => {
             </table>
           </div>
         </div>
-      ) : null}
+      ) : (
+        <div className="empty-state p-20">
+          <div className="text-4xl mb-4">📊</div>
+          <p className="text-secondary font-bold">Select parameters to generate report</p>
+        </div>
+      )}
+    </div>
+  );
+};
     </div>
   );
 };

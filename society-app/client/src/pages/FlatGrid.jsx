@@ -49,86 +49,88 @@ const FlatGrid = () => {
 
   return (
     <div className="page">
-      <div className="page-header">
-        <div>
-          <div className="breadcrumb">
-            <Link to="/blocks" className="breadcrumb-link">Blocks</Link>
-            <span className="breadcrumb-sep">›</span>
-            <span>Block {block?.name}</span>
+      <header className="page-header">
+        <div className="page-title-group">
+          <div className="breadcrumb flex items-center gap-1 text-xs text-secondary mb-1">
+            <Link to="/blocks" className="hover:text-primary">Blocks</Link>
+            <span>›</span>
+            <span className="font-bold text-text">Block {block?.name}</span>
           </div>
-          <h1 className="page-title">Block {block?.name} - Flats</h1>
+          <h1 className="page-title">Block {block?.name}</h1>
           <p className="page-subtitle">{block?.totalFloors} Floors • {flats.length} Flats</p>
         </div>
-      </div>
+      </header>
 
-      {/* Filter Tabs */}
-      <div className="filter-tabs">
+      {/* Responsive Filter Tabs */}
+      <div className="filter-tabs mb-6">
         {[
           { key: 'all', label: 'All', icon: '📋' },
           { key: 'paid', label: 'Paid', icon: '✅' },
           { key: 'pending', label: 'Pending', icon: '⏳' },
           { key: 'partial', label: 'Partial', icon: '🔶' }
         ].map(tab => (
-          <button key={tab.key}
+          <button 
+            key={tab.key}
             className={`filter-tab ${filter === tab.key ? 'active' : ''} filter-tab--${tab.key}`}
-            onClick={() => setFilter(tab.key)} id={`filter-${tab.key}`}>
-            <span>{tab.icon}</span>
-            <span>{tab.label}</span>
+            onClick={() => setFilter(tab.key)}
+          >
+            <span className="text-lg">{tab.icon}</span>
+            <span className="font-bold">{tab.label}</span>
             <span className="filter-count">{statusCounts[tab.key]}</span>
           </button>
         ))}
       </div>
 
-      {/* Visual Legend */}
-      <div className="flat-grid-legend" style={{ marginBottom: '1.5rem', display: 'flex', gap: '1rem', flexWrap: 'wrap', padding: '1rem', background: 'var(--bg-input)', borderRadius: '12px' }}>
-        <div className="legend-item-flat"><span className="legend-color" style={{ background: '#10b981' }}></span> Paid</div>
-        <div className="legend-item-flat"><span className="legend-color" style={{ background: '#ef4444' }}></span> Pending</div>
-        <div className="legend-item-flat"><span className="legend-color" style={{ background: '#f59e0b' }}></span> Partial</div>
-        <div className="legend-item-flat"><span className="legend-color" style={{ background: 'var(--text-muted)' }}></span> Vacant</div>
+      {/* Legend - Responsive and Clean */}
+      <div className="card mb-6 p-4 bg-slate-50 border-dashed">
+        <div className="flex flex-wrap gap-4 justify-center sm:justify-start">
+          <div className="legend-item-flat flex items-center gap-2 text-xs font-bold">
+            <span className="w-3 h-3 rounded-full bg-success"></span> Paid
+          </div>
+          <div className="legend-item-flat flex items-center gap-2 text-xs font-bold">
+            <span className="w-3 h-3 rounded-full bg-danger"></span> Pending
+          </div>
+          <div className="legend-item-flat flex items-center gap-2 text-xs font-bold">
+            <span className="w-3 h-3 rounded-full bg-warning"></span> Partial
+          </div>
+          <div className="legend-item-flat flex items-center gap-2 text-xs font-bold text-muted">
+            <span className="w-3 h-3 rounded-full bg-slate-300"></span> Vacant
+          </div>
+        </div>
       </div>
 
       {/* Flat Grid by Floor */}
-      <div className="floor-sections">
+      <div className="floor-sections flex flex-col gap-8">
         {Object.keys(floors).sort((a, b) => b - a).map(floor => (
-          <div key={floor} className="floor-section" style={{ marginBottom: '2rem' }}>
-            <h3 style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '0.75rem', paddingLeft: '0.5rem', borderLeft: '3px solid var(--primary)' }}>FLOOR {floor}</h3>
-            <div style={{ 
-              display: 'grid', 
-              gridTemplateColumns: 'repeat(auto-fill, minmax(70px, 1fr))', 
-              gap: '0.75rem',
-              padding: '0.5rem'
-            }}>
+          <div key={floor} className="floor-section">
+            <div className="flex items-center gap-3 mb-3 px-1">
+              <div className="h-6 w-1 bg-primary rounded-full"></div>
+              <h3 className="text-xs font-black text-secondary tracking-widest uppercase">FLOOR {floor}</h3>
+            </div>
+            
+            <div className="flat-grid">
               {floors[floor].map(flat => (
-                <div key={flat._id}
+                <div 
+                  key={flat._id}
+                  className={`flat-cell flat-cell--${flat.currentMonthStatus || 'vacant'}`}
                   onClick={() => navigate(`/flats/${flat._id}`)}
                   style={{
-                    aspectRatio: '1',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    borderRadius: '12px',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                     background: flat.currentMonthStatus === 'paid' ? 'rgba(16, 185, 129, 0.1)' : 
                                flat.currentMonthStatus === 'pending' ? 'rgba(239, 68, 68, 0.1)' :
                                flat.currentMonthStatus === 'partial' ? 'rgba(245, 158, 11, 0.1)' : 'var(--bg-input)',
                     border: `2px solid ${
-                      flat.currentMonthStatus === 'paid' ? '#10b981' : 
-                      flat.currentMonthStatus === 'pending' ? '#ef4444' :
-                      flat.currentMonthStatus === 'partial' ? '#f59e0b' : 'var(--border)'
+                      flat.currentMonthStatus === 'paid' ? 'var(--success)' : 
+                      flat.currentMonthStatus === 'pending' ? 'var(--danger)' :
+                      flat.currentMonthStatus === 'partial' ? 'var(--warning)' : 'var(--border)'
                     }`,
-                    color: flat.currentMonthStatus === 'paid' ? '#10b981' : 
-                           flat.currentMonthStatus === 'pending' ? '#ef4444' :
-                           flat.currentMonthStatus === 'partial' ? '#f59e0b' : 'var(--text-muted)',
-                    boxShadow: 'var(--shadow)'
+                    color: flat.currentMonthStatus === 'paid' ? 'var(--success)' : 
+                           flat.currentMonthStatus === 'pending' ? 'var(--danger)' :
+                           flat.currentMonthStatus === 'partial' ? 'var(--warning)' : 'var(--text-muted)'
                   }}
-                  onMouseOver={(e) => { e.currentTarget.style.transform = 'scale(1.1)'; e.currentTarget.style.boxShadow = 'var(--shadow-lg)'; }}
-                  onMouseOut={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = 'var(--shadow)'; }}
-                  id={`flat-${flat.number}`}>
-                  <span style={{ fontSize: '1rem', fontWeight: '800' }}>{flat.number}</span>
-                  <span style={{ fontSize: '0.5rem', opacity: 0.7, textTransform: 'uppercase', fontWeight: 'bold' }}>
-                    {flat.isOccupied ? (flat.ownerName?.split(' ')[0] || 'Member') : 'Vacant'}
+                >
+                  <span className="text-lg font-black tracking-tighter">{flat.number}</span>
+                  <span className="text-[9px] font-bold opacity-70 truncate w-full text-center px-1">
+                    {flat.isOccupied ? (flat.ownerName?.split(' ')[0] || 'Member') : 'VACANT'}
                   </span>
                 </div>
               ))}
@@ -138,10 +140,10 @@ const FlatGrid = () => {
       </div>
 
       {filteredFlats.length === 0 && (
-        <div className="empty-state">
-          <div className="empty-icon">🔍</div>
-          <h2>No flats found</h2>
-          <p>No flats match the selected filter</p>
+        <div className="empty-state p-12 text-center">
+          <div className="text-4xl mb-4">🔍</div>
+          <h2 className="text-xl font-bold">No flats found</h2>
+          <p className="text-secondary">Try adjusting your filters</p>
         </div>
       )}
     </div>

@@ -46,98 +46,117 @@ const Settings = () => {
 
   return (
     <div className="page">
-      <div className="page-header">
-        <div>
+      <header className="page-header">
+        <div className="page-title-group">
           <h1 className="page-title">Settings</h1>
-          <p className="page-subtitle">Manage society settings</p>
+          <p className="page-subtitle">Configure society parameters</p>
         </div>
-        {user?.role === 'admin' && (
-          <div className="invite-box" style={{ 
-            background: 'var(--primary-glow)', 
-            padding: '1rem', 
-            borderRadius: '12px',
-            border: '1px solid var(--primary)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '0.5rem',
-            maxWidth: '100%',
-            overflow: 'hidden'
-          }}>
-            <span style={{ fontSize: '0.8rem', opacity: 0.8, fontWeight: 'bold' }}>SOCIETY INVITE CODE</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-              {user?.societyId?.inviteCode ? (
-                <>
-                  <span style={{ fontSize: '1.3rem', fontWeight: '900', letterSpacing: '0.1rem', wordBreak: 'break-all' }}>{user.societyId.inviteCode}</span>
-                  <button className="btn btn--primary btn--sm" onClick={() => {
-                    const link = `${window.location.origin}/join/${user.societyId.inviteCode}`;
-                    navigator.clipboard.writeText(link);
-                    alert('Invite link copied to clipboard!');
-                  }}>🔗 Copy Link</button>
-                </>
-              ) : (
-                <button className="btn btn--primary btn--sm" onClick={handleGenerateCode}>✨ Generate Invite Code</button>
-              )}
+      </header>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Admin Tools Sidebar */}
+        <div className="lg:col-span-4 flex flex-col gap-6">
+          {user?.role === 'admin' && (
+            <div className="card border-primary/20 overflow-hidden relative group">
+              <div className="absolute top-0 right-0 p-4 opacity-10 text-4xl group-hover:rotate-12 transition-transform">✨</div>
+              <div className="p-6">
+                <p className="text-[10px] font-black text-secondary uppercase tracking-widest mb-4">Onboarding Tools</p>
+                <h3 className="text-sm font-black text-slate-900 mb-6">Society Invite Code</h3>
+                
+                <div className="bg-slate-50 border border-slate-100 rounded-2xl p-6 flex flex-col items-center justify-center gap-4 text-center">
+                  {user?.societyId?.inviteCode ? (
+                    <>
+                      <span className="text-3xl font-black text-primary tracking-widest">{user.societyId.inviteCode}</span>
+                      <p className="text-[10px] font-bold text-secondary uppercase">Share this code with residents</p>
+                      <button className="btn btn--primary btn--sm w-full mt-2" onClick={() => {
+                        const link = `${window.location.origin}/join/${user.societyId.inviteCode}`;
+                        navigator.clipboard.writeText(link);
+                        alert('Link copied!');
+                      }}>🔗 Copy Invite Link</button>
+                    </>
+                  ) : (
+                    <button className="btn btn--primary btn--sm w-full" onClick={handleGenerateCode}>Generate Code</button>
+                  )}
+                </div>
+              </div>
             </div>
+          )}
+
+          <div className="card p-6 bg-slate-50/50 border-dashed">
+            <h4 className="text-xs font-black text-slate-900 mb-2 uppercase tracking-tight">Need Help?</h4>
+            <p className="text-xs text-secondary leading-relaxed">
+              Updating these settings will affect bill generation and member registration globally across the society.
+            </p>
           </div>
-        )}
-      </div>
+        </div>
 
-      <div className="settings-grid">
-        <div className="card">
-          <h3 className="card-title" style={{ padding: '1.5rem 1.5rem 0' }}>Society Information</h3>
-          <form onSubmit={handleSubmit} className="settings-form">
-            {message && <div className={`alert ${message.includes('success') ? 'alert--success' : 'alert--error'}`}>{message}</div>}
+        {/* Settings Form */}
+        <div className="lg:col-span-8">
+          <div className="card p-6 sm:p-8">
+            <div className="flex items-center gap-3 mb-8">
+              <div className="w-8 h-8 rounded-lg bg-primary-light text-primary flex items-center justify-center text-sm font-black">🏢</div>
+              <h3 className="text-lg font-black text-slate-900">Society Configuration</h3>
+            </div>
 
-            <div className="form-group">
-              <label htmlFor="set-name">Society Name</label>
-              <input type="text" id="set-name" value={societyForm.name}
-                onChange={e => setSocietyForm({ ...societyForm, name: e.target.value })} required />
-            </div>
-            <div className="form-group">
-              <label htmlFor="set-address">Address</label>
-              <input type="text" id="set-address" value={societyForm.address}
-                onChange={e => setSocietyForm({ ...societyForm, address: e.target.value })} required />
-            </div>
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="set-maintenance">Maintenance Amount (₹)</label>
-                <input type="number" id="set-maintenance" value={societyForm.maintenanceAmount}
-                  onChange={e => setSocietyForm({ ...societyForm, maintenanceAmount: parseInt(e.target.value) })} />
+            <form onSubmit={handleSubmit} className="modal-form">
+              {message && (
+                <div className={`p-4 rounded-xl mb-8 flex items-center gap-3 text-xs font-bold ${message.includes('success') ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-rose-50 text-rose-600 border border-rose-100'}`}>
+                  <span>{message.includes('success') ? '✅' : '⚠️'}</span>
+                  {message}
+                </div>
+              )}
+
+              <div className="grid gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="form-group">
+                    <label>Society Name</label>
+                    <input type="text" value={societyForm.name} onChange={e => setSocietyForm({ ...societyForm, name: e.target.value })} required />
+                  </div>
+                  <div className="form-group">
+                    <label>Billing Day (1-28)</label>
+                    <input type="number" min="1" max="28" value={societyForm.billingDay} onChange={e => setSocietyForm({ ...societyForm, billingDay: parseInt(e.target.value) })} />
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label>Full Address</label>
+                  <input type="text" value={societyForm.address} onChange={e => setSocietyForm({ ...societyForm, address: e.target.value })} required />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="form-group">
+                    <label>Maintenance (₹)</label>
+                    <input type="number" value={societyForm.maintenanceAmount} onChange={e => setSocietyForm({ ...societyForm, maintenanceAmount: parseInt(e.target.value) })} />
+                  </div>
+                  <div className="form-group">
+                    <label>Late Fee/Day (₹)</label>
+                    <input type="number" value={societyForm.lateFeePerDay} onChange={e => setSocietyForm({ ...societyForm, lateFeePerDay: parseInt(e.target.value) })} />
+                  </div>
+                  <div className="form-group">
+                    <label>Late After (Days)</label>
+                    <input type="number" value={societyForm.lateFeeAfterDays} onChange={e => setSocietyForm({ ...societyForm, lateFeeAfterDays: parseInt(e.target.value) })} />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="form-group">
+                    <label>Admin Contact</label>
+                    <input type="text" value={societyForm.contactNumber} onChange={e => setSocietyForm({ ...societyForm, contactNumber: e.target.value })} placeholder="9876543210" />
+                  </div>
+                  <div className="form-group">
+                    <label>Society UPI ID</label>
+                    <input type="text" value={societyForm.upiId} onChange={e => setSocietyForm({ ...societyForm, upiId: e.target.value })} placeholder="society@upi" />
+                  </div>
+                </div>
               </div>
-              <div className="form-group">
-                <label htmlFor="set-billing">Billing Day</label>
-                <input type="number" id="set-billing" min="1" max="28" value={societyForm.billingDay}
-                  onChange={e => setSocietyForm({ ...societyForm, billingDay: parseInt(e.target.value) })} />
+
+              <div className="mt-12 flex justify-end">
+                <button type="submit" className="btn btn--primary w-full sm:w-auto px-12" disabled={saving}>
+                  {saving ? <span className="btn-spinner"></span> : '💾 Save Changes'}
+                </button>
               </div>
-            </div>
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="set-contact">Contact Number</label>
-                <input type="text" id="set-contact" value={societyForm.contactNumber}
-                  onChange={e => setSocietyForm({ ...societyForm, contactNumber: e.target.value })} placeholder="e.g. 9876543210" />
-              </div>
-              <div className="form-group">
-                <label htmlFor="set-upi">UPI ID (for payments)</label>
-                <input type="text" id="set-upi" value={societyForm.upiId}
-                  onChange={e => setSocietyForm({ ...societyForm, upiId: e.target.value })} placeholder="e.g. society@upi" />
-              </div>
-            </div>
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="set-latefee">Late Fee/Day (₹)</label>
-                <input type="number" id="set-latefee" value={societyForm.lateFeePerDay}
-                  onChange={e => setSocietyForm({ ...societyForm, lateFeePerDay: parseInt(e.target.value) })} />
-              </div>
-              <div className="form-group">
-                <label htmlFor="set-latedays">Late Fee After Days</label>
-                <input type="number" id="set-latedays" value={societyForm.lateFeeAfterDays}
-                  onChange={e => setSocietyForm({ ...societyForm, lateFeeAfterDays: parseInt(e.target.value) })} />
-              </div>
-            </div>
-            <button type="submit" className="btn btn--primary" disabled={saving} id="save-settings-btn">
-              {saving ? <span className="btn-spinner"></span> : '💾 Save Settings'}
-            </button>
-          </form>
+            </form>
+          </div>
         </div>
       </div>
     </div>

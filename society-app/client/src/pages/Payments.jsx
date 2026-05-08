@@ -237,139 +237,148 @@ const Payments = () => {
 
   return (
     <div className="page">
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">🏠 Maintenance</h1>
-          <p className="page-subtitle">{isAdmin ? 'Manage maintenance bills & payments' : 'Your maintenance payments'}</p>
+      <header className="page-header">
+        <div className="page-title-group">
+          <h1 className="page-title">Maintenance</h1>
+          <p className="page-subtitle">{isAdmin ? 'Manage bills & collections' : 'Your society dues'}</p>
         </div>
-        {isAdmin ? (
-          <div className="btn-group">
-            <button className="btn btn--primary" onClick={() => setShowBillModal(true)}>📄 Generate Bills</button>
-            <button className="btn btn--success" onClick={openManualModal}>➕ Manual Entry</button>
+        <div className="page-actions mt-3 sm:mt-0">
+          {isAdmin ? (
+            <div className="flex gap-2 w-full sm:w-auto">
+              <button className="btn btn--primary flex-1 sm:flex-initial" onClick={() => setShowBillModal(true)}>📄 Generate</button>
+              <button className="btn btn--success flex-1 sm:flex-initial" onClick={openManualModal}>➕ Manual</button>
+            </div>
+          ) : (
+            <button className="btn btn--primary w-full sm:w-auto" onClick={() => setShowNewRequestModal(true)}>📤 Submit Payment</button>
+          )}
+        </div>
+      </header>
+
+      {/* Primary Summary Stats */}
+      <div className="stats-grid mb-6">
+        <div className="stats-card stats-card--success">
+          <div className="stats-card__icon">💰</div>
+          <div className="stats-card__content">
+            <span className="stats-card__label">Collected</span>
+            <span className="stats-card__value">{formatCurrency(totalCollected)}</span>
           </div>
-        ) : (
-          <button className="btn btn--primary" onClick={() => {
-            setNewReqForm({
-              month: new Date().getMonth() + 1, year: new Date().getFullYear(),
-              amount: '', paymentMethod: 'upi', transactionId: '', notes: ''
-            });
-            setShowNewRequestModal(true);
-          }}>📤 Submit Payment Request</button>
-        )}
-      </div>
-
-      {/* Filters */}
-      <div className="filters-bar">
-        {isAdmin && (
-          <div className="filter-group">
-            <select value={monthFilter} onChange={e => setMonthFilter(parseInt(e.target.value))} className="filter-select">
-              {MONTHS.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
-            </select>
-            <select value={yearFilter} onChange={e => setYearFilter(parseInt(e.target.value))} className="filter-select">
-              {[2024, 2025, 2026, 2027].map(y => <option key={y} value={y}>{y}</option>)}
-            </select>
+        </div>
+        <div className="stats-card stats-card--danger">
+          <div className="stats-card__icon">⏳</div>
+          <div className="stats-card__content">
+            <span className="stats-card__label">Pending</span>
+            <span className="stats-card__value">{formatCurrency(totalDue)}</span>
           </div>
-        )}
-        <div className="filter-tabs filter-tabs--sm">
-          {['all', 'paid', 'pending', 'partial'].map(s => (
-            <button key={s} className={`filter-tab filter-tab--${s} ${filter === s ? 'active' : ''}`}
-              onClick={() => setFilter(s)}>{s === 'all' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)}</button>
-          ))}
+        </div>
+        <div className="stats-card stats-card--primary">
+          <div className="stats-card__icon">📊</div>
+          <div className="stats-card__content">
+            <span className="stats-card__label">Records</span>
+            <span className="stats-card__value">{payments.length}</span>
+          </div>
         </div>
       </div>
 
-      {/* Summary */}
-      <div className="payment-summary">
-        <div className="payment-summary-item payment-summary--collected">
-          <span className="psi-label">Collected</span>
-          <span className="psi-value">{formatCurrency(totalCollected)}</span>
-        </div>
-        <div className="payment-summary-item payment-summary--due">
-          <span className="psi-label">Pending</span>
-          <span className="psi-value">{formatCurrency(totalDue)}</span>
-        </div>
-        <div className="payment-summary-item payment-summary--count">
-          <span className="psi-label">Records</span>
-          <span className="psi-value">{payments.length}</span>
+      {/* Responsive Filters Section */}
+      <div className="card mb-6">
+        <div className="p-4 flex flex-col sm:flex-row gap-4 items-center justify-between">
+          {isAdmin && (
+            <div className="flex gap-2 w-full sm:w-auto">
+              <select value={monthFilter} onChange={e => setMonthFilter(parseInt(e.target.value))} className="flex-1 min-h-[44px] rounded-lg border-slate-200 px-3 font-bold text-sm bg-slate-50">
+                {MONTHS.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
+              </select>
+              <select value={yearFilter} onChange={e => setYearFilter(parseInt(e.target.value))} className="w-24 min-h-[44px] rounded-lg border-slate-200 px-3 font-bold text-sm bg-slate-50">
+                {[2024, 2025, 2026, 2027].map(y => <option key={y} value={y}>{y}</option>)}
+              </select>
+            </div>
+          )}
+          
+          <div className="filter-tabs filter-tabs--sm w-full sm:w-auto overflow-x-auto no-scrollbar">
+            {['all', 'paid', 'pending', 'partial'].map(s => (
+              <button key={s} className={`filter-tab filter-tab--${s} ${filter === s ? 'active' : ''}`}
+                onClick={() => setFilter(s)}>{s === 'all' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)}</button>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Member: Pending Requests Alert */}
-      {!isAdmin && myRequests.filter(r => r.status === 'pending_verification').length > 0 && (
-        <div className="alert alert--warning" style={{ marginBottom: '1rem' }}>
-          ⏳ <strong>{myRequests.filter(r => r.status === 'pending_verification').length}</strong> payment(s) pending verification by admin.
+      {/* Member Alerts */}
+      {!isAdmin && (
+        <div className="flex flex-col gap-3 mb-6">
+          {myRequests.filter(r => r.status === 'pending_verification').length > 0 && (
+            <div className="alert alert--info">
+              <span>⏳</span>
+              <p><strong>{myRequests.filter(r => r.status === 'pending_verification').length}</strong> payments awaiting approval.</p>
+            </div>
+          )}
+          {myRequests.filter(r => r.status === 'rejected').length > 0 && (
+            <div className="alert alert--error">
+              <span>❌</span>
+              <p><strong>{myRequests.filter(r => r.status === 'rejected').length}</strong> payments rejected. Check history below.</p>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Rejected requests alert */}
-      {!isAdmin && myRequests.filter(r => r.status === 'rejected').length > 0 && (
-        <div className="alert alert--error" style={{ marginBottom: '1rem' }}>
-          ❌ <strong>{myRequests.filter(r => r.status === 'rejected').length}</strong> payment(s) were rejected. Please re-submit.
-        </div>
-      )}
-
-      {/* Table */}
-      <div className="card">
+      {/* Main Records Table */}
+      <div className="card mb-8">
         <div className="card-header">
-          <h3 className="card-title">{isAdmin ? 'All Maintenance Records' : 'My Maintenance Records'}</h3>
+          <h3 className="card-title">Maintenance Records</h3>
+          <span className="card-badge">{filtered.length} items</span>
         </div>
         <div className="table-wrapper">
           <table className="table">
             <thead>
               <tr>
                 {isAdmin && <th>Flat</th>}
-                {isAdmin && <th>Owner</th>}
                 <th>Month</th>
                 <th>Amount</th>
-                <th>Paid</th>
                 <th>Status</th>
-                <th>Method</th>
-                <th>Date</th>
                 <th>Action</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((p, i) => (
                 <tr key={i}>
-                  {isAdmin && <td className="font-medium">{p.flatId?.number || '-'}</td>}
-                  {isAdmin && <td>{p.flatId?.ownerName || '-'}</td>}
-                  <td className="font-medium">{MONTHS[p.month - 1]?.slice(0, 3)} {p.year}</td>
-                  <td>{formatCurrency(p.amount)}</td>
-                  <td className="text-success">{formatCurrency(p.paidAmount)}</td>
+                  {isAdmin && (
+                    <td>
+                      <div className="flex flex-col">
+                        <span className="font-black text-primary">{p.flatId?.number || '-'}</span>
+                        <span className="text-[10px] text-secondary truncate max-w-[100px]">{p.flatId?.ownerName || '-'}</span>
+                      </div>
+                    </td>
+                  )}
+                  <td className="font-bold">{MONTHS[p.month - 1]?.slice(0, 3)} {p.year}</td>
+                  <td className="font-black">{formatCurrency(p.amount)}</td>
                   <td><span className={`status-badge status-badge--${p.status}`}>{p.status}</span></td>
-                  <td>{p.paymentMethod?.replace('_', ' ') || '-'}</td>
-                  <td>{p.paidDate ? new Date(p.paidDate).toLocaleDateString('en-IN') : '-'}</td>
                   <td>
-                    <div className="btn-group">
-                      {/* Member: Pay button */}
+                    <div className="flex gap-2">
                       {!isAdmin && p.status !== 'paid' && !hasPendingRequest(p.month, p.year) && (
-                        <button className="btn btn--sm btn--primary" onClick={() => openPayModal(p)}>💰 Pay</button>
+                        <button className="btn btn--sm btn--primary px-3" onClick={() => openPayModal(p)}>Pay</button>
                       )}
                       {!isAdmin && hasPendingRequest(p.month, p.year) && (
-                        <span className="status-badge status-badge--warning" style={{ fontSize: '.7rem' }}>⏳ Verifying</span>
+                        <span className="text-[10px] font-black uppercase text-warning tracking-tighter">⏳ Verifying</span>
                       )}
-                      {/* Receipt */}
                       {p.status === 'paid' && (
-                        <button className="btn--icon" onClick={() => handleDownloadReceipt(p)} title="Download Receipt">📥</button>
+                        <button className="btn--icon bg-slate-50 hover:bg-slate-100" onClick={() => handleDownloadReceipt(p)}>📥</button>
                       )}
                     </div>
                   </td>
                 </tr>
               ))}
               {filtered.length === 0 && (
-                <tr><td colSpan={isAdmin ? 10 : 8} className="text-center text-muted">No payments found</td></tr>
+                <tr><td colSpan={isAdmin ? 5 : 4} className="text-center p-12 text-secondary">No records found.</td></tr>
               )}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* Member: My Payment Requests History */}
+      {/* Member History Table */}
       {!isAdmin && myRequests.length > 0 && (
-        <div className="card" style={{ marginTop: '1.5rem' }}>
+        <div className="card">
           <div className="card-header">
-            <h3 className="card-title">My Payment Requests</h3>
-            <span className="card-badge">{myRequests.length} requests</span>
+            <h3 className="card-title">Request History</h3>
           </div>
           <div className="table-wrapper">
             <table className="table">
@@ -377,33 +386,27 @@ const Payments = () => {
                 <tr>
                   <th>Month</th>
                   <th>Amount</th>
-                  <th>Method</th>
-                  <th>Txn ID</th>
                   <th>Status</th>
-                  <th>Admin Notes</th>
                   <th>Submitted</th>
                 </tr>
               </thead>
               <tbody>
                 {myRequests.map((r, i) => (
                   <tr key={i}>
-                    <td className="font-medium">{MONTHS[r.month - 1]?.slice(0, 3)} {r.year}</td>
-                    <td>{formatCurrency(r.amount)}</td>
-                    <td>{r.paymentMethod?.replace('_', ' ') || '-'}</td>
-                    <td style={{ fontFamily: 'monospace', fontSize: '.8rem' }}>{r.transactionId || '-'}</td>
+                    <td className="font-bold">{MONTHS[r.month - 1]?.slice(0, 3)} {r.year}</td>
+                    <td className="font-black">{formatCurrency(r.amount)}</td>
                     <td>
                       <span className={`status-badge status-badge--${
                         r.status === 'approved' ? 'paid' :
                         r.status === 'pending_verification' ? 'warning' :
                         r.status === 'rejected' ? 'danger' : 'info'
                       }`}>
-                        {r.status === 'pending_verification' ? '⏳ Verifying' :
-                         r.status === 'approved' ? '✅ Approved' :
-                         r.status === 'rejected' ? '❌ Rejected' : '🔄 Correction'}
+                        {r.status === 'pending_verification' ? 'Verifying' :
+                         r.status === 'approved' ? 'Approved' :
+                         r.status === 'rejected' ? 'Rejected' : 'Correction'}
                       </span>
                     </td>
-                    <td style={{ maxWidth: '150px', fontSize: '.8rem' }}>{r.adminNotes || '-'}</td>
-                    <td style={{ fontSize: '.8rem' }}>{new Date(r.createdAt).toLocaleDateString('en-IN')}</td>
+                    <td className="text-[10px] font-bold text-secondary">{new Date(r.createdAt).toLocaleDateString()}</td>
                   </tr>
                 ))}
               </tbody>
@@ -412,203 +415,160 @@ const Payments = () => {
         </div>
       )}
 
-      {/* Generate Bills Modal (Admin) */}
-      <Modal isOpen={showBillModal} onClose={() => setShowBillModal(false)} title="Generate Monthly Bills">
-        <form onSubmit={generateBills} className="modal-form">
-          <div className="payment-info-box">
-            <p>Generate bills for: <strong>{MONTHS[monthFilter - 1]} {yearFilter}</strong></p>
-            <p>Bills will be created for all occupied flats that don't have a bill yet.</p>
+      {/* Modals - Standardized and Responsive */}
+      <Modal isOpen={showBillModal} onClose={() => setShowBillModal(false)} title="Generate Bills">
+        <form onSubmit={generateBills} className="modal-form p-4">
+          <div className="mb-4 p-4 bg-slate-50 rounded-xl border-l-4 border-primary">
+            <p className="text-sm font-bold text-secondary">Billing Period</p>
+            <p className="text-lg font-black">{MONTHS[monthFilter - 1]} {yearFilter}</p>
           </div>
-          <div className="form-group">
-            <label>Maintenance Amount (₹)</label>
-            <input type="number" min="1" value={billForm.amount}
+          <div className="form-group mb-6">
+            <label className="text-xs font-black uppercase tracking-widest text-secondary mb-2 block">Maintenance Amount (₹)</label>
+            <input type="number" className="text-2xl font-black p-4" min="1" value={billForm.amount}
               onChange={e => setBillForm({ ...billForm, amount: e.target.value })} required />
           </div>
           <div className="modal-actions">
-            <button type="button" className="btn btn--ghost" onClick={() => setShowBillModal(false)}>Cancel</button>
-            <button type="submit" className="btn btn--primary" disabled={saving}>
-              {saving ? <span className="btn-spinner"></span> : 'Generate Bills'}
+            <button type="button" className="btn btn--secondary flex-1" onClick={() => setShowBillModal(false)}>Cancel</button>
+            <button type="submit" className="btn btn--primary flex-1" disabled={saving}>
+              {saving ? <span className="btn-spinner"></span> : 'Create Bills'}
             </button>
           </div>
         </form>
       </Modal>
 
-      {/* Manual Entry Modal (Admin) */}
-      <Modal isOpen={showManualModal} onClose={() => setShowManualModal(false)} title="➕ Manual Payment Entry">
-        <form onSubmit={submitManualEntry} className="modal-form">
-          <div className="payment-info-box">
-            <p>Manually record a maintenance payment for a flat.</p>
-            <p>Useful for cash payments, old records, or corrections.</p>
-          </div>
-          <div className="form-group">
-            <label>Select Block</label>
-            <select onChange={e => onBlockSelect(e.target.value)} required>
-              <option value="">Select Block</option>
-              {blocks.map(b => <option key={b._id} value={b._id}>{b.name}</option>)}
-            </select>
-          </div>
-          <div className="form-group">
-            <label>Select Flat</label>
-            <select value={manualForm.flatId} onChange={e => setManualForm({ ...manualForm, flatId: e.target.value })} required disabled={flats.length === 0}>
-              <option value="">Select Flat</option>
-              {flats.map(f => <option key={f._id} value={f._id}>{f.number} - {f.ownerName || 'Vacant'}</option>)}
-            </select>
-          </div>
-          <div className="form-row">
+      <Modal isOpen={showManualModal} onClose={() => setShowManualModal(false)} title="Record Payment">
+        <form onSubmit={submitManualEntry} className="modal-form p-4 max-h-[80vh] overflow-y-auto no-scrollbar">
+          <div className="grid gap-4">
             <div className="form-group">
-              <label>Month</label>
-              <select value={manualForm.month} onChange={e => setManualForm({ ...manualForm, month: e.target.value })}>
-                {MONTHS.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
+              <label>Block</label>
+              <select onChange={e => onBlockSelect(e.target.value)} required>
+                <option value="">Select Block</option>
+                {blocks.map(b => <option key={b._id} value={b._id}>{b.name}</option>)}
               </select>
             </div>
             <div className="form-group">
-              <label>Year</label>
-              <select value={manualForm.year} onChange={e => setManualForm({ ...manualForm, year: e.target.value })}>
-                {[2024, 2025, 2026, 2027].map(y => <option key={y} value={y}>{y}</option>)}
+              <label>Flat</label>
+              <select value={manualForm.flatId} onChange={e => setManualForm({ ...manualForm, flatId: e.target.value })} required disabled={flats.length === 0}>
+                <option value="">Select Flat</option>
+                {flats.map(f => <option key={f._id} value={f._id}>{f.number} - {f.ownerName || 'Vacant'}</option>)}
               </select>
             </div>
-          </div>
-          <div className="form-row">
-            <div className="form-group">
-              <label>Bill Amount (₹)</label>
-              <input type="number" min="1" value={manualForm.amount}
-                onChange={e => setManualForm({ ...manualForm, amount: e.target.value })} required placeholder="e.g. 3000" />
+            <div className="grid grid-cols-2 gap-3">
+              <div className="form-group">
+                <label>Month</label>
+                <select value={manualForm.month} onChange={e => setManualForm({ ...manualForm, month: e.target.value })}>
+                  {MONTHS.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Year</label>
+                <select value={manualForm.year} onChange={e => setManualForm({ ...manualForm, year: e.target.value })}>
+                  {[2024, 2025, 2026, 2027].map(y => <option key={y} value={y}>{y}</option>)}
+                </select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="form-group">
+                <label>Bill (₹)</label>
+                <input type="number" value={manualForm.amount} onChange={e => setManualForm({ ...manualForm, amount: e.target.value })} required />
+              </div>
+              <div className="form-group">
+                <label>Paid (₹)</label>
+                <input type="number" value={manualForm.paidAmount} onChange={e => setManualForm({ ...manualForm, paidAmount: e.target.value })} required />
+              </div>
             </div>
             <div className="form-group">
-              <label>Paid Amount (₹)</label>
-              <input type="number" min="0" value={manualForm.paidAmount}
-                onChange={e => setManualForm({ ...manualForm, paidAmount: e.target.value })} required placeholder="e.g. 3000" />
-            </div>
-          </div>
-          <div className="form-row">
-            <div className="form-group">
-              <label>Payment Method</label>
+              <label>Method</label>
               <select value={manualForm.paymentMethod} onChange={e => setManualForm({ ...manualForm, paymentMethod: e.target.value })}>
-                <option value="cash">💵 Cash</option>
-                <option value="upi">📱 UPI</option>
-                <option value="bank_transfer">🏦 Bank Transfer</option>
-                <option value="cheque">📝 Cheque</option>
-                <option value="online">🌐 Online</option>
+                <option value="cash">Cash</option>
+                <option value="upi">UPI</option>
+                <option value="bank_transfer">Bank Transfer</option>
               </select>
             </div>
-            <div className="form-group">
-              <label>Transaction ID</label>
-              <input type="text" value={manualForm.transactionId}
-                onChange={e => setManualForm({ ...manualForm, transactionId: e.target.value })} placeholder="Optional" />
-            </div>
           </div>
-          <div className="form-group">
-            <label>Notes</label>
-            <input type="text" value={manualForm.notes}
-              onChange={e => setManualForm({ ...manualForm, notes: e.target.value })} placeholder="e.g. Collected by secretary" />
-          </div>
-          <div className="modal-actions">
-            <button type="button" className="btn btn--ghost" onClick={() => setShowManualModal(false)}>Cancel</button>
-            <button type="submit" className="btn btn--primary" disabled={saving}>
-              {saving ? <span className="btn-spinner"></span> : '💾 Record Payment'}
+          <div className="modal-actions mt-6">
+            <button type="button" className="btn btn--secondary flex-1" onClick={() => setShowManualModal(false)}>Cancel</button>
+            <button type="submit" className="btn btn--success flex-1" disabled={saving}>
+              {saving ? <span className="btn-spinner"></span> : 'Save Payment'}
             </button>
           </div>
         </form>
       </Modal>
 
-      {/* Member: Pay Maintenance Modal */}
-      <Modal isOpen={showPayModal} onClose={() => setShowPayModal(false)} title="💰 Pay Maintenance">
+      <Modal isOpen={showPayModal} onClose={() => setShowPayModal(false)} title="Pay Maintenance">
         {selectedPayment && (
-          <form onSubmit={submitPaymentRequest} className="modal-form">
-            <div className="payment-info-box">
-              <p>Paying for: <strong>{MONTHS[selectedPayment.month - 1]} {selectedPayment.year}</strong></p>
-              <p>Due Amount: <strong>{formatCurrency(selectedPayment.amount - selectedPayment.paidAmount)}</strong></p>
-              <p style={{ fontSize: '.8rem', color: 'var(--text-muted)', marginTop: '.5rem' }}>
-                ℹ️ Payment will be sent to admin for verification. Once approved, your status will update automatically.
-              </p>
+          <form onSubmit={submitPaymentRequest} className="modal-form p-4">
+            <div className="mb-4 p-4 bg-slate-50 rounded-xl">
+              <p className="text-xs font-black text-secondary tracking-widest uppercase">Bill Amount</p>
+              <p className="text-3xl font-black text-primary">{formatCurrency(selectedPayment.amount - selectedPayment.paidAmount)}</p>
+              <p className="text-[10px] font-bold text-secondary mt-1">{MONTHS[selectedPayment.month - 1]} {selectedPayment.year}</p>
             </div>
-            <div className="form-group">
-              <label>Amount (₹) *</label>
-              <input type="number" min="1" value={payForm.amount}
-                onChange={e => setPayForm({ ...payForm, amount: e.target.value })} required />
+            <div className="grid gap-4">
+              <div className="form-group">
+                <label>Paying Amount</label>
+                <input type="number" value={payForm.amount} onChange={e => setPayForm({ ...payForm, amount: e.target.value })} required />
+              </div>
+              <div className="form-group">
+                <label>Method</label>
+                <select value={payForm.paymentMethod} onChange={e => setPayForm({ ...payForm, paymentMethod: e.target.value })}>
+                  <option value="upi">UPI</option>
+                  <option value="bank_transfer">Bank Transfer</option>
+                  <option value="cash">Cash</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Transaction ID / Ref</label>
+                <input type="text" value={payForm.transactionId} onChange={e => setPayForm({ ...payForm, transactionId: e.target.value })} placeholder="Reference number" />
+              </div>
             </div>
-            <div className="form-group">
-              <label>Payment Method *</label>
-              <select value={payForm.paymentMethod} onChange={e => setPayForm({ ...payForm, paymentMethod: e.target.value })}>
-                <option value="upi">📱 UPI</option>
-                <option value="bank_transfer">🏦 Bank Transfer</option>
-                <option value="cash">💵 Cash</option>
-                <option value="cheque">📝 Cheque</option>
-                <option value="online">🌐 Online</option>
-              </select>
-            </div>
-            <div className="form-group">
-              <label>Transaction ID / Reference</label>
-              <input type="text" value={payForm.transactionId}
-                onChange={e => setPayForm({ ...payForm, transactionId: e.target.value })} placeholder="UPI ref / Bank ref number" />
-            </div>
-            <div className="form-group">
-              <label>Notes / Message</label>
-              <input type="text" value={payForm.notes}
-                onChange={e => setPayForm({ ...payForm, notes: e.target.value })} placeholder="Any message for admin" />
-            </div>
-            <div className="modal-actions">
-              <button type="button" className="btn btn--ghost" onClick={() => setShowPayModal(false)}>Cancel</button>
-              <button type="submit" className="btn btn--primary btn--lg" disabled={saving} style={{ flex: 1 }}>
-                {saving ? <span className="btn-spinner"></span> : '📤 Submit for Verification'}
+            <div className="modal-actions mt-6">
+              <button type="button" className="btn btn--secondary flex-1" onClick={() => setShowPayModal(false)}>Cancel</button>
+              <button type="submit" className="btn btn--primary flex-1" disabled={saving}>
+                {saving ? <span className="btn-spinner"></span> : 'Submit'}
               </button>
             </div>
           </form>
         )}
       </Modal>
 
-      {/* Member: New Payment Request Modal (manual submit) */}
-      <Modal isOpen={showNewRequestModal} onClose={() => setShowNewRequestModal(false)} title="📤 Submit Payment Request">
-        <form onSubmit={submitNewRequest} className="modal-form">
-          <div className="payment-info-box">
-            <p>💡 Submit your maintenance payment details here.</p>
-            <p style={{ fontSize: '.8rem', color: 'var(--text-muted)', marginTop: '.3rem' }}>
-              Admin will verify and approve your payment. Once approved, your status will update automatically.
-            </p>
-          </div>
-          <div className="form-row">
+      <Modal isOpen={showNewRequestModal} onClose={() => setShowNewRequestModal(false)} title="Submit Payment">
+        <form onSubmit={submitNewRequest} className="modal-form p-4">
+          <div className="grid grid-cols-2 gap-3 mb-4">
             <div className="form-group">
-              <label>Month *</label>
+              <label>Month</label>
               <select value={newReqForm.month} onChange={e => setNewReqForm({ ...newReqForm, month: e.target.value })}>
                 {MONTHS.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
               </select>
             </div>
             <div className="form-group">
-              <label>Year *</label>
+              <label>Year</label>
               <select value={newReqForm.year} onChange={e => setNewReqForm({ ...newReqForm, year: e.target.value })}>
                 {[2024, 2025, 2026, 2027].map(y => <option key={y} value={y}>{y}</option>)}
               </select>
             </div>
           </div>
-          <div className="form-group">
-            <label>Amount (₹) *</label>
-            <input type="number" min="1" value={newReqForm.amount}
-              onChange={e => setNewReqForm({ ...newReqForm, amount: e.target.value })} required placeholder="Enter paid amount" />
+          <div className="grid gap-4">
+            <div className="form-group">
+              <label>Amount Paid (₹)</label>
+              <input type="number" value={newReqForm.amount} onChange={e => setNewReqForm({ ...newReqForm, amount: e.target.value })} required />
+            </div>
+            <div className="form-group">
+              <label>Payment Method</label>
+              <select value={newReqForm.paymentMethod} onChange={e => setNewReqForm({ ...newReqForm, paymentMethod: e.target.value })}>
+                <option value="upi">UPI</option>
+                <option value="bank_transfer">Bank Transfer</option>
+                <option value="cash">Cash</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Transaction ID / Ref</label>
+              <input type="text" value={newReqForm.transactionId} onChange={e => setNewReqForm({ ...newReqForm, transactionId: e.target.value })} placeholder="Reference number" />
+            </div>
           </div>
-          <div className="form-group">
-            <label>Payment Method *</label>
-            <select value={newReqForm.paymentMethod} onChange={e => setNewReqForm({ ...newReqForm, paymentMethod: e.target.value })}>
-              <option value="upi">📱 UPI</option>
-              <option value="bank_transfer">🏦 Bank Transfer</option>
-              <option value="cash">💵 Cash</option>
-              <option value="cheque">📝 Cheque</option>
-              <option value="online">🌐 Online</option>
-            </select>
-          </div>
-          <div className="form-group">
-            <label>Transaction ID / Reference</label>
-            <input type="text" value={newReqForm.transactionId}
-              onChange={e => setNewReqForm({ ...newReqForm, transactionId: e.target.value })} placeholder="UPI ref / Bank ref number (optional)" />
-          </div>
-          <div className="form-group">
-            <label>Notes / Message</label>
-            <input type="text" value={newReqForm.notes}
-              onChange={e => setNewReqForm({ ...newReqForm, notes: e.target.value })} placeholder="Any message for admin (optional)" />
-          </div>
-          <div className="modal-actions">
-            <button type="button" className="btn btn--ghost" onClick={() => setShowNewRequestModal(false)}>Cancel</button>
-            <button type="submit" className="btn btn--primary btn--lg" disabled={saving} style={{ flex: 1 }}>
-              {saving ? <span className="btn-spinner"></span> : '📤 Submit Payment Request'}
+          <div className="modal-actions mt-6">
+            <button type="button" className="btn btn--secondary flex-1" onClick={() => setShowNewRequestModal(false)}>Cancel</button>
+            <button type="submit" className="btn btn--primary flex-1" disabled={saving}>
+              {saving ? <span className="btn-spinner"></span> : 'Submit Request'}
             </button>
           </div>
         </form>

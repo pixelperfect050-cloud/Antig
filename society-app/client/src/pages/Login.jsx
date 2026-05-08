@@ -42,97 +42,105 @@ const Login = () => {
           <div className="auth-header">
             <div className="auth-logo">🏘️</div>
             <h1 className="auth-title">SocietySync</h1>
-            <p className="auth-subtitle">Smart Society Management</p>
+            <p className="auth-subtitle">Elevate Your Living Experience</p>
           </div>
 
-          <div className="auth-tabs" style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--border)' }}>
-            <button type="button" onClick={() => setLoginMode('email')} style={{ flex: 1, padding: '0.75rem', background: 'none', border: 'none', borderBottom: loginMode === 'email' ? '2px solid var(--primary)' : 'none', color: loginMode === 'email' ? 'var(--primary)' : 'var(--text-secondary)', fontWeight: '600', cursor: 'pointer' }}>Email</button>
-            <button type="button" onClick={() => setLoginMode('mobile')} style={{ flex: 1, padding: '0.75rem', background: 'none', border: 'none', borderBottom: loginMode === 'mobile' ? '2px solid var(--primary)' : 'none', color: loginMode === 'mobile' ? 'var(--primary)' : 'var(--text-secondary)', fontWeight: '600', cursor: 'pointer' }}>Mobile</button>
+          <div className="flex gap-2 p-1 bg-slate-100/50 rounded-2xl mb-8">
+            <button type="button" onClick={() => setLoginMode('email')} 
+              className={`flex-1 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${loginMode === 'email' ? 'bg-white text-primary shadow-sm' : 'text-secondary hover:text-primary'}`}>
+              Email
+            </button>
+            <button type="button" onClick={() => setLoginMode('mobile')} 
+              className={`flex-1 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${loginMode === 'mobile' ? 'bg-white text-primary shadow-sm' : 'text-secondary hover:text-primary'}`}>
+              Mobile
+            </button>
           </div>
 
           <form onSubmit={handleSubmit} className="auth-form">
-            <h2 className="form-title">{loginMode === 'email' ? 'Welcome Back' : 'OTP Login'}</h2>
-            <p className="form-subtitle">{loginMode === 'email' ? 'Sign in to your account' : 'Enter mobile number for OTP'}</p>
+            <div className="mb-2">
+              <h2 className="text-xl font-black text-slate-900">
+                {loginMode === 'email' ? 'Welcome Back' : 'OTP Login'}
+              </h2>
+              <p className="text-xs text-secondary font-medium">
+                {loginMode === 'email' ? 'Sign in to continue managing your home' : 'Secure access via mobile OTP'}
+              </p>
+            </div>
 
-            {error && <div className="alert alert--error">{error}</div>}
-
-            {loginMode === 'email' ? (
-              <>
-                <div className="form-group">
-                  <label htmlFor="email">Email Address</label>
-                  <div className="input-wrapper">
-                    <span className="input-icon">📧</span>
-                    <input
-                      type="email"
-                      id="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="Enter your email"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="password">Password</label>
-                  <div className="input-wrapper">
-                    <span className="input-icon">🔒</span>
-                    <input
-                      type="password"
-                      id="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Enter your password"
-                      required
-                    />
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div className="form-group">
-                <label htmlFor="mobile">Mobile Number</label>
-                <div className="input-wrapper">
-                  <span className="input-icon">📱</span>
-                  <input
-                    type="tel"
-                    id="mobile"
-                    placeholder="Enter 10-digit mobile number"
-                    required
-                  />
-                </div>
-                <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                  A 6-digit OTP will be sent to this number
-                </div>
+            {error && (
+              <div className="p-3 bg-rose-50 border border-rose-100 text-rose-500 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                <span>⚠️</span> {error}
               </div>
             )}
 
-            <button type="submit" className="btn btn--primary btn--full" disabled={loading} id="login-btn" style={{ borderRadius: '25px', height: '50px' }}>
-              {loading ? <span className="btn-spinner"></span> : (loginMode === 'email' ? 'Sign In' : 'Send OTP')}
+            {loginMode === 'email' ? (
+              <div className="grid gap-4">
+                <div className="form-group">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-secondary mb-1">Email Address</label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="name@example.com"
+                    required
+                    className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-100 focus:border-primary focus:bg-white outline-none transition-all text-sm font-medium"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-secondary mb-1">Security Key</label>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    required
+                    className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-100 focus:border-primary focus:bg-white outline-none transition-all text-sm font-medium"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="form-group">
+                <label className="text-[10px] font-black uppercase tracking-widest text-secondary mb-1">Mobile Number</label>
+                <input
+                  type="tel"
+                  placeholder="+91 00000 00000"
+                  required
+                  className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-100 focus:border-primary focus:bg-white outline-none transition-all text-sm font-medium"
+                />
+                <p className="mt-2 text-[10px] text-slate-400 font-bold uppercase">A 6-digit code will be sent</p>
+              </div>
+            )}
+
+            <button type="submit" className="btn btn--primary w-full py-4 rounded-2xl shadow-lg shadow-primary/20 mt-4" disabled={loading}>
+              {loading ? <span className="btn-spinner"></span> : (loginMode === 'email' ? 'Authorize' : 'Get OTP')}
             </button>
 
-            <p className="auth-link">
-              Don't have an account? <Link to="/register">Sign Up</Link>
-            </p>
-
-            <div style={{ margin: '1.5rem 0', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <hr style={{ flex: 1, opacity: 0.1 }} />
-              <span style={{ fontSize: '0.8rem', opacity: 0.5 }}>OR</span>
-              <hr style={{ flex: 1, opacity: 0.1 }} />
+            <div className="relative my-8">
+              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-100"></div></div>
+              <div className="relative flex justify-center text-[10px] uppercase font-black tracking-widest"><span className="bg-white px-4 text-slate-300">or</span></div>
             </div>
 
-            <Link to="/join" className="btn btn--outline btn--full" style={{ borderRadius: '25px' }}>
-              🏠 Join Existing Society
+            <Link to="/join" className="btn btn--secondary w-full py-4 rounded-2xl">
+              🏠 Join a Society
             </Link>
+
+            <p className="auth-link">
+              New resident? <Link to="/register">Create Account</Link>
+            </p>
           </form>
 
-          <div className="auth-demo-info">
-            <p>🔑 Demo Credentials:</p>
-            <p><strong>Admin:</strong> admin@society.com / admin123</p>
-            <p><strong>Member:</strong> member1@society.com / member123</p>
+          <div className="auth-demo-info mt-8 border-t border-slate-100 pt-6">
+            <p className="text-[10px] font-black text-slate-900 uppercase mb-2">🔑 Demo Access</p>
+            <div className="grid gap-1">
+              <p className="text-[10px] text-secondary font-bold">ADMIN: <span className="text-primary">admin@society.com</span> / admin123</p>
+              <p className="text-[10px] text-secondary font-bold">MEMBER: <span className="text-primary">member1@society.com</span> / member123</p>
+            </div>
           </div>
         </div>
       </div>
     </div>
+  );
+};
   );
 };
 

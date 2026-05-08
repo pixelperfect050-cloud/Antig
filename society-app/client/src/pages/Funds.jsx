@@ -170,27 +170,27 @@ const Funds = () => {
 
   return (
     <div className="page">
-      <div className="page-header">
-        <div>
+      <header className="page-header">
+        <div className="page-title-group">
           <h1 className="page-title">Society Funds</h1>
-          <p className="page-subtitle">{isAdmin ? 'Manage extra fund collections' : 'View & pay fund contributions'}</p>
+          <p className="page-subtitle">{isAdmin ? 'Manage collections' : 'Contribution tracker'}</p>
         </div>
         {isAdmin && (
-          <button className="btn btn--primary" onClick={() => setShowCreateModal(true)} id="create-fund-btn">
+          <button className="btn btn--primary btn--sm mt-2 sm:mt-0" onClick={() => setShowCreateModal(true)}>
             ➕ Create Fund
           </button>
         )}
-      </div>
+      </header>
 
-      {/* Fund Cards */}
       {funds.length === 0 ? (
-        <div className="empty-state">
-          <div className="empty-icon">💰</div>
-          <h2>No Funds Created</h2>
-          <p>{isAdmin ? 'Create your first society fund to start collecting.' : 'No fund collections at the moment.'}</p>
+        <div className="empty-state p-20">
+          <div className="text-6xl mb-6">💰</div>
+          <h2 className="text-xl font-black mb-2">No active funds</h2>
+          <p className="text-secondary">Special collections or emergency funds will appear here.</p>
+          {isAdmin && <button className="btn btn--primary mt-4" onClick={() => setShowCreateModal(true)}>Create First Fund</button>}
         </div>
       ) : (
-        <div className="funds-grid">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {funds.map(fund => {
             const catInfo = getCatInfo(fund.category);
             const progress = fund.totalTarget > 0 ? ((fund.totalCollected / fund.totalTarget) * 100) : 0;
@@ -198,77 +198,98 @@ const Funds = () => {
             const myPayment = myFundPayments.find(p => (p.fundId?._id || p.fundId) === fund._id);
 
             return (
-              <div key={fund._id} className="card fund-card">
-                <div className="fund-card-header">
-                  <div className="fund-cat-badge" style={{ background: catInfo.color + '20', color: catInfo.color }}>
-                    {catInfo.label}
+              <div key={fund._id} className="card overflow-hidden group hover:border-primary transition-all">
+                {/* Visual Header */}
+                <div className="h-2" style={{ backgroundColor: catInfo.color }}></div>
+                
+                <div className="p-5">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">{catInfo.label.split(' ')[0]}</span>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-secondary">
+                        {catInfo.label.split(' ')[1]}
+                      </span>
+                    </div>
+                    {fund.status === 'completed' ? (
+                      <span className="status-badge status-badge--success text-[10px]">Completed</span>
+                    ) : isOverdue ? (
+                      <span className="status-badge status-badge--danger text-[10px]">Overdue</span>
+                    ) : (
+                      <span className="status-badge status-badge--warning text-[10px]">Active</span>
+                    )}
                   </div>
-                  {isOverdue && <span className="fund-overdue-badge">⚠️ Overdue</span>}
-                  {fund.status === 'completed' && <span className="fund-completed-badge">✅ Completed</span>}
-                </div>
 
-                <h3 className="fund-name">{fund.name}</h3>
-                {fund.description && <p className="fund-description">{fund.description}</p>}
+                  <h3 className="text-lg font-black text-slate-900 mb-1 group-hover:text-primary transition-colors">
+                    {fund.name}
+                  </h3>
+                  <p className="text-xs text-secondary mb-6 line-clamp-2">{fund.description}</p>
 
-                <div className="fund-stats-row">
-                  <div className="fund-stat">
-                    <span className="fund-stat-label">Per Flat</span>
-                    <span className="fund-stat-value">{formatCurrency(fund.amountPerFlat)}</span>
+                  {/* Fund Metrics */}
+                  <div className="grid grid-cols-2 gap-4 mb-6 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                    <div>
+                      <p className="text-[10px] font-black text-secondary uppercase tracking-widest mb-1">Per Flat</p>
+                      <p className="text-lg font-black text-primary">{formatCurrency(fund.amountPerFlat)}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[10px] font-black text-secondary uppercase tracking-widest mb-1">Due Date</p>
+                      <p className="text-xs font-bold">{new Date(fund.dueDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</p>
+                    </div>
                   </div>
-                  <div className="fund-stat">
-                    <span className="fund-stat-label">Collected</span>
-                    <span className="fund-stat-value" style={{ color: 'var(--success)' }}>{formatCurrency(fund.totalCollected)}</span>
+
+                  {/* Progress Visualization */}
+                  <div className="mb-6">
+                    <div className="flex justify-between items-end mb-2">
+                      <span className="text-[10px] font-black text-secondary uppercase tracking-widest">Collection Progress</span>
+                      <span className="text-xs font-black text-primary">{Math.round(progress)}%</span>
+                    </div>
+                    <div className="h-3 bg-slate-100 rounded-full overflow-hidden flex">
+                      <div className="h-full rounded-full shadow-sm shadow-black/10 transition-all duration-1000" 
+                        style={{ width: `${Math.min(progress, 100)}%`, backgroundColor: catInfo.color }}></div>
+                    </div>
+                    <div className="flex justify-between mt-2 text-[10px] font-bold">
+                      <span className="text-emerald-600">{formatCurrency(fund.totalCollected)}</span>
+                      <span className="text-secondary">Target: {formatCurrency(fund.totalTarget)}</span>
+                    </div>
                   </div>
-                  <div className="fund-stat">
-                    <span className="fund-stat-label">Target</span>
-                    <span className="fund-stat-value">{formatCurrency(fund.totalTarget)}</span>
+
+                  <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+                    <div className="flex -space-x-2">
+                      {[...Array(Math.min(fund.paidCount, 3))].map((_, i) => (
+                        <div key={i} className="w-6 h-6 rounded-full bg-slate-200 border-2 border-white flex items-center justify-center text-[8px] font-bold">👤</div>
+                      ))}
+                      {fund.paidCount > 3 && (
+                        <div className="w-6 h-6 rounded-full bg-primary-light text-primary border-2 border-white flex items-center justify-center text-[8px] font-black">
+                          +{fund.paidCount - 3}
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="flex-1 text-right pl-4">
+                      {isAdmin ? (
+                        <button className="btn btn--secondary btn--sm w-full" onClick={() => viewFundDetail(fund)}>
+                          View Breakdown
+                        </button>
+                      ) : (
+                        <>
+                          {(!myPayment || myPayment.status === 'pending' || myPayment.status === 'rejected') && (
+                            <button className="btn btn--primary btn--sm w-full" onClick={() => {
+                              setSelectedFund(fund);
+                              setPayForm({ amount: fund.amountPerFlat, paymentMethod: 'upi', transactionId: '', notes: '' });
+                              setShowPayModal(true);
+                            }}>
+                              {myPayment?.status === 'rejected' ? 'Re-submit' : 'Contribute'}
+                            </button>
+                          )}
+                          {myPayment?.status === 'pending_verification' && (
+                            <span className="text-[10px] font-black text-amber-500 uppercase">⏳ Verifying</span>
+                          )}
+                          {myPayment?.status === 'paid' && (
+                            <span className="text-[10px] font-black text-emerald-500 uppercase">✅ Contributed</span>
+                          )}
+                        </>
+                      )}
+                    </div>
                   </div>
-                </div>
-
-                {/* Progress Bar */}
-                <div className="fund-progress">
-                  <div className="fund-progress-bar" style={{ width: `${Math.min(progress, 100)}%`, background: catInfo.color }}></div>
-                </div>
-                <div className="fund-progress-info">
-                  <span>{Math.round(progress)}% collected</span>
-                  <span>Due: {new Date(fund.dueDate).toLocaleDateString('en-IN')}</span>
-                </div>
-
-                <div className="fund-meta-row">
-                  <span>🏠 {fund.paidCount || 0}/{fund.totalFlats || 0} paid</span>
-                  <span>⏳ {fund.pendingCount || 0} pending</span>
-                </div>
-
-                <div className="fund-actions">
-                  {isAdmin && (
-                    <button className="btn btn--sm btn--outline" onClick={() => viewFundDetail(fund)}>
-                      📋 View Details
-                    </button>
-                  )}
-                  {!isAdmin && myPayment && myPayment.status === 'pending' && (
-                    <button className="btn btn--sm btn--primary" onClick={() => {
-                      setSelectedFund(fund);
-                      setPayForm({ amount: fund.amountPerFlat, paymentMethod: 'upi', transactionId: '', notes: '' });
-                      setShowPayModal(true);
-                    }}>
-                      💰 Pay Now
-                    </button>
-                  )}
-                  {!isAdmin && myPayment && myPayment.status === 'pending_verification' && (
-                    <span className="status-badge status-badge--warning">⏳ Verification Pending</span>
-                  )}
-                  {!isAdmin && myPayment && myPayment.status === 'paid' && (
-                    <span className="status-badge status-badge--paid">✅ Paid</span>
-                  )}
-                  {!isAdmin && myPayment && myPayment.status === 'rejected' && (
-                    <button className="btn btn--sm btn--primary" onClick={() => {
-                      setSelectedFund(fund);
-                      setPayForm({ amount: fund.amountPerFlat, paymentMethod: 'upi', transactionId: '', notes: '' });
-                      setShowPayModal(true);
-                    }}>
-                      🔄 Re-submit
-                    </button>
-                  )}
                 </div>
               </div>
             );
@@ -276,140 +297,89 @@ const Funds = () => {
         </div>
       )}
 
-      {/* Create Fund Modal */}
-      <Modal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} title="Create New Fund">
-        <form onSubmit={createFund} className="modal-form">
-          <div className="form-group">
-            <label>Fund Name *</label>
-            <input type="text" value={createForm.name} onChange={e => setCreateForm({ ...createForm, name: e.target.value })} placeholder="e.g. Diwali Festival Fund" required />
-          </div>
-          <div className="form-group">
-            <label>Description</label>
-            <textarea value={createForm.description} onChange={e => setCreateForm({ ...createForm, description: e.target.value })} placeholder="Purpose of this fund..." rows={2} style={{ width: '100%', resize: 'vertical' }} />
-          </div>
-          <div className="form-row">
+      {/* Standardized Modals */}
+      <Modal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} title="New Society Fund">
+        <form onSubmit={createFund} className="modal-form p-4">
+          <div className="grid gap-4">
             <div className="form-group">
-              <label>Category</label>
-              <select value={createForm.category} onChange={e => setCreateForm({ ...createForm, category: e.target.value })}>
-                {FUND_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-              </select>
+              <label>Fund Name</label>
+              <input type="text" value={createForm.name} onChange={e => setCreateForm({ ...createForm, name: e.target.value })} placeholder="e.g. Roof Repair 2024" required />
             </div>
             <div className="form-group">
-              <label>Amount Per Flat (₹) *</label>
-              <input type="number" min="1" value={createForm.amountPerFlat} onChange={e => setCreateForm({ ...createForm, amountPerFlat: e.target.value })} required />
+              <label>Purpose</label>
+              <textarea value={createForm.description} onChange={e => setCreateForm({ ...createForm, description: e.target.value })} placeholder="Detailed explanation..." rows={2} />
             </div>
-          </div>
-          <div className="form-row">
-            <div className="form-group">
-              <label>Due Date *</label>
-              <input type="date" value={createForm.dueDate} onChange={e => setCreateForm({ ...createForm, dueDate: e.target.value })} required />
-            </div>
-            <div className="form-group">
-              <label>Applicable To</label>
-              <select value={createForm.applicableTo} onChange={e => setCreateForm({ ...createForm, applicableTo: e.target.value })}>
-                <option value="all">All Flats</option>
-                <option value="specific_blocks">Specific Blocks</option>
-              </select>
-            </div>
-          </div>
-          {createForm.applicableTo === 'specific_blocks' && (
-            <div className="form-group">
-              <label>Select Blocks</label>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.5rem' }}>
-                {blocks.map(b => (
-                  <label key={b._id} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', cursor: 'pointer', padding: '0.3rem 0.6rem', borderRadius: '8px', background: createForm.applicableBlocks.includes(b._id) ? 'var(--primary-glow)' : 'var(--card-bg)', border: '1px solid var(--border)' }}>
-                    <input type="checkbox" checked={createForm.applicableBlocks.includes(b._id)}
-                      onChange={e => {
-                        if (e.target.checked) setCreateForm({ ...createForm, applicableBlocks: [...createForm.applicableBlocks, b._id] });
-                        else setCreateForm({ ...createForm, applicableBlocks: createForm.applicableBlocks.filter(id => id !== b._id) });
-                      }} />
-                    {b.name}
-                  </label>
-                ))}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="form-group">
+                <label>Category</label>
+                <select value={createForm.category} onChange={e => setCreateForm({ ...createForm, category: e.target.value })}>
+                  {FUND_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Amount/Flat (₹)</label>
+                <input type="number" min="1" value={createForm.amountPerFlat} onChange={e => setCreateForm({ ...createForm, amountPerFlat: e.target.value })} required />
               </div>
             </div>
-          )}
-          <div className="modal-actions">
-            <button type="button" className="btn btn--ghost" onClick={() => setShowCreateModal(false)}>Cancel</button>
-            <button type="submit" className="btn btn--primary" disabled={saving}>
-              {saving ? <span className="btn-spinner"></span> : 'Create Fund'}
-            </button>
-          </div>
-        </form>
-      </Modal>
-
-      {/* Pay Fund Modal (Member) */}
-      <Modal isOpen={showPayModal} onClose={() => setShowPayModal(false)} title={`Pay: ${selectedFund?.name || 'Fund'}`}>
-        <form onSubmit={submitFundPayment} className="modal-form">
-          <div className="payment-info-box">
-            <p><strong>Fund:</strong> {selectedFund?.name}</p>
-            <p><strong>Amount:</strong> {formatCurrency(selectedFund?.amountPerFlat)}</p>
-          </div>
-          <div className="form-group">
-            <label>Amount (₹)</label>
-            <input type="number" min="1" value={payForm.amount} onChange={e => setPayForm({ ...payForm, amount: e.target.value })} required />
-          </div>
-          <div className="form-group">
-            <label>Payment Method</label>
-            <select value={payForm.paymentMethod} onChange={e => setPayForm({ ...payForm, paymentMethod: e.target.value })}>
-              <option value="upi">UPI</option>
-              <option value="bank_transfer">Bank Transfer</option>
-              <option value="cash">Cash</option>
-              <option value="cheque">Cheque</option>
-              <option value="online">Online</option>
-            </select>
-          </div>
-          <div className="form-group">
-            <label>Transaction ID (Optional)</label>
-            <input type="text" value={payForm.transactionId} onChange={e => setPayForm({ ...payForm, transactionId: e.target.value })} placeholder="UPI/Bank ref number" />
-          </div>
-          <div className="form-group">
-            <label>Notes (Optional)</label>
-            <input type="text" value={payForm.notes} onChange={e => setPayForm({ ...payForm, notes: e.target.value })} />
-          </div>
-          <div className="modal-actions">
-            <button type="button" className="btn btn--ghost" onClick={() => setShowPayModal(false)}>Cancel</button>
-            <button type="submit" className="btn btn--primary" disabled={saving}>
-              {saving ? <span className="btn-spinner"></span> : 'Submit Payment'}
-            </button>
-          </div>
-        </form>
-      </Modal>
-
-      {/* Fund Detail Modal (Admin) */}
-      <Modal isOpen={showDetailModal} onClose={() => setShowDetailModal(false)} title={fundDetail?.fund?.name || 'Fund Details'}>
-        {fundDetail && (
-          <div>
-            <div className="payment-info-box" style={{ marginBottom: '1rem' }}>
-              <p><strong>Target:</strong> {formatCurrency(fundDetail.fund.totalTarget)} | <strong>Collected:</strong> <span style={{ color: 'var(--success)' }}>{formatCurrency(fundDetail.totalCollected)}</span></p>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="form-group">
+                <label>Due Date</label>
+                <input type="date" value={createForm.dueDate} onChange={e => setCreateForm({ ...createForm, dueDate: e.target.value })} required />
+              </div>
+              <div className="form-group">
+                <label>Scope</label>
+                <select value={createForm.applicableTo} onChange={e => setCreateForm({ ...createForm, applicableTo: e.target.value })}>
+                  <option value="all">Entire Society</option>
+                  <option value="specific_blocks">Specific Blocks</option>
+                </select>
+              </div>
             </div>
-            <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+          </div>
+          <div className="modal-actions mt-8">
+            <button type="button" className="btn btn--secondary flex-1" onClick={() => setShowCreateModal(false)}>Cancel</button>
+            <button type="submit" className="btn btn--primary flex-1" disabled={saving}>
+              {saving ? <span className="btn-spinner"></span> : 'Initialize Fund'}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Other modals refactored for premium mobile-first experience */}
+      {/* Detail Modal Refactor */}
+      <Modal isOpen={showDetailModal} onClose={() => setShowDetailModal(false)} title={fundDetail?.fund?.name || 'Breakdown'}>
+        {fundDetail && (
+          <div className="p-4">
+            <div className="stats-card stats-card--primary mb-6">
+              <div className="stats-card__icon">💰</div>
+              <div className="stats-card__content">
+                <span className="stats-card__label">Total Collected</span>
+                <span className="stats-card__value">{formatCurrency(fundDetail.totalCollected)}</span>
+              </div>
+            </div>
+            
+            <div className="flex flex-col gap-2 max-h-[60vh] overflow-y-auto no-scrollbar">
               {fundDetail.payments?.map(fp => (
-                <div key={fp._id} className="fund-detail-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem', borderBottom: '1px solid var(--border)', gap: '0.5rem', flexWrap: 'wrap' }}>
-                  <div style={{ minWidth: '120px' }}>
-                    <div style={{ fontWeight: 600 }}>🏠 {fp.flatId?.number || 'N/A'}</div>
-                    <div style={{ fontSize: '0.75rem', opacity: 0.7 }}>{fp.flatId?.ownerName}</div>
+                <div key={fp._id} className="p-3 bg-slate-50 rounded-xl flex items-center justify-between gap-3 border border-slate-100">
+                  <div className="min-w-0">
+                    <p className="font-black text-sm text-primary">Unit {fp.flatId?.number || '?'}</p>
+                    <p className="text-[10px] font-bold text-secondary truncate uppercase">{fp.flatId?.ownerName}</p>
                   </div>
-                  <div style={{ textAlign: 'center' }}>
-                    <span className={`status-badge status-badge--${fp.status === 'paid' ? 'paid' : fp.status === 'pending_verification' ? 'warning' : fp.status === 'rejected' ? 'danger' : 'pending'}`}>
-                      {fp.status === 'paid' ? '✅ Paid' : fp.status === 'pending_verification' ? '⏳ Verify' : fp.status === 'rejected' ? '❌ Rejected' : '⏳ Pending'}
-                    </span>
-                  </div>
-                  <div style={{ textAlign: 'right', display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-                    {fp.status === 'pending_verification' && (
-                      <>
-                        <button className="btn btn--sm btn--success" onClick={() => reviewFundPayment(fp._id, 'paid')}>✅</button>
-                        <button className="btn btn--sm btn--danger" onClick={() => reviewFundPayment(fp._id, 'rejected', 'Payment rejected')}>❌</button>
-                      </>
-                    )}
-                    {(fp.status === 'pending' || fp.status === 'rejected') && (
-                      <button className="btn btn--sm btn--outline" onClick={() => {
+                  
+                  <div className="flex items-center gap-2">
+                    {fp.status === 'pending_verification' ? (
+                      <div className="flex gap-1">
+                        <button className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-xs" onClick={() => reviewFundPayment(fp._id, 'paid')}>✓</button>
+                        <button className="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center text-xs" onClick={() => reviewFundPayment(fp._id, 'rejected', 'Rejected')}>✕</button>
+                      </div>
+                    ) : (fp.status === 'pending' || fp.status === 'rejected') ? (
+                      <button className="btn btn--outline btn--sm text-[10px] py-1 px-3" onClick={() => {
                         setSelectedFP(fp);
                         setManualForm({ paidAmount: fp.amount, paymentMethod: 'cash', notes: '' });
                         setShowManualModal(true);
-                      }}>💰 Manual</button>
+                      }}>Manual</button>
+                    ) : (
+                      <span className="text-xs font-black text-emerald-600">{formatCurrency(fp.paidAmount)}</span>
                     )}
-                    {fp.status === 'paid' && <span style={{ color: 'var(--success)', fontWeight: 600 }}>{formatCurrency(fp.paidAmount)}</span>}
                   </div>
                 </div>
               ))}
@@ -418,38 +388,70 @@ const Funds = () => {
         )}
       </Modal>
 
-      {/* Manual Payment Modal (Admin) */}
-      <Modal isOpen={showManualModal} onClose={() => setShowManualModal(false)} title="Manual Fund Payment">
-        <form onSubmit={submitManualPayment} className="modal-form">
-          <div className="payment-info-box">
-            <p><strong>Flat:</strong> {selectedFP?.flatId?.number}</p>
-            <p><strong>Amount Due:</strong> {formatCurrency(selectedFP?.amount)}</p>
+      {/* Contribution and Manual modals also updated... */}
+      <Modal isOpen={showPayModal} onClose={() => setShowPayModal(false)} title="Contribute to Fund">
+        <form onSubmit={submitFundPayment} className="modal-form p-4">
+          <div className="p-4 bg-primary-light rounded-2xl mb-6">
+            <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-1">Contributing to</p>
+            <p className="text-lg font-black text-primary truncate">{selectedFund?.name}</p>
+            <p className="text-xs font-bold text-primary/70">Required: {formatCurrency(selectedFund?.amountPerFlat)}</p>
           </div>
-          <div className="form-group">
-            <label>Paid Amount (₹)</label>
-            <input type="number" min="1" value={manualForm.paidAmount} onChange={e => setManualForm({ ...manualForm, paidAmount: e.target.value })} required />
+          <div className="grid gap-4">
+            <div className="form-group">
+              <label>Amount (₹)</label>
+              <input type="number" min="1" value={payForm.amount} onChange={e => setPayForm({ ...payForm, amount: e.target.value })} required />
+            </div>
+            <div className="form-group">
+              <label>Payment Mode</label>
+              <select value={payForm.paymentMethod} onChange={e => setPayForm({ ...payForm, paymentMethod: e.target.value })}>
+                <option value="upi">UPI / QR Scan</option>
+                <option value="bank_transfer">Net Banking</option>
+                <option value="cash">Cash / Physical</option>
+                <option value="cheque">Cheque</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Reference #</label>
+              <input type="text" value={payForm.transactionId} onChange={e => setPayForm({ ...payForm, transactionId: e.target.value })} placeholder="Transaction ID (if any)" />
+            </div>
           </div>
-          <div className="form-group">
-            <label>Payment Method</label>
-            <select value={manualForm.paymentMethod} onChange={e => setManualForm({ ...manualForm, paymentMethod: e.target.value })}>
-              <option value="cash">Cash</option>
-              <option value="upi">UPI</option>
-              <option value="bank_transfer">Bank Transfer</option>
-              <option value="cheque">Cheque</option>
-            </select>
-          </div>
-          <div className="form-group">
-            <label>Notes</label>
-            <input type="text" value={manualForm.notes} onChange={e => setManualForm({ ...manualForm, notes: e.target.value })} />
-          </div>
-          <div className="modal-actions">
-            <button type="button" className="btn btn--ghost" onClick={() => setShowManualModal(false)}>Cancel</button>
-            <button type="submit" className="btn btn--primary" disabled={saving}>
-              {saving ? <span className="btn-spinner"></span> : 'Record Payment'}
-            </button>
+          <div className="modal-actions mt-8">
+            <button type="button" className="btn btn--secondary flex-1" onClick={() => setShowPayModal(false)}>Cancel</button>
+            <button type="submit" className="btn btn--primary flex-1" disabled={saving}>Confirm Payment</button>
           </div>
         </form>
       </Modal>
+
+      {/* Manual Modal Refactor */}
+      <Modal isOpen={showManualModal} onClose={() => setShowManualModal(false)} title="Manual Entry">
+        <form onSubmit={submitManualPayment} className="modal-form p-4">
+          <div className="grid gap-4">
+            <div className="form-group">
+              <label>Received Amount (₹)</label>
+              <input type="number" min="1" value={manualForm.paidAmount} onChange={e => setManualForm({ ...manualForm, paidAmount: e.target.value })} required />
+            </div>
+            <div className="form-group">
+              <label>Payment Method</label>
+              <select value={manualForm.paymentMethod} onChange={e => setManualForm({ ...manualForm, paymentMethod: e.target.value })}>
+                <option value="cash">Cash</option>
+                <option value="upi">UPI</option>
+                <option value="bank_transfer">Transfer</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Admin Notes</label>
+              <input type="text" value={manualForm.notes} onChange={e => setManualForm({ ...manualForm, notes: e.target.value })} placeholder="Received by..." />
+            </div>
+          </div>
+          <div className="modal-actions mt-8">
+            <button type="button" className="btn btn--secondary flex-1" onClick={() => setShowManualModal(false)}>Cancel</button>
+            <button type="submit" className="btn btn--primary flex-1" disabled={saving}>Record Entry</button>
+          </div>
+        </form>
+      </Modal>
+    </div>
+  );
+};
     </div>
   );
 };

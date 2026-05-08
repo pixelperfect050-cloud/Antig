@@ -91,116 +91,145 @@ const JoinSociety = () => {
   };
 
   return (
-    <div className="page login-page">
-      <div className="login-card" style={{ maxWidth: '500px' }}>
-        <div className="login-header">
-          <h1>Join Society</h1>
-          <p>Register as a resident member</p>
-        </div>
+    <div className="auth-page">
+      <div className="auth-bg">
+        <div className="auth-bg-shape shape-1"></div>
+        <div className="auth-bg-shape shape-2"></div>
+        <div className="auth-bg-shape shape-3"></div>
+      </div>
 
-        {step === 1 && (
-          <div className="setup-form">
-            <div className="form-group">
-              <label>Enter Invite Code</label>
-              <input 
-                type="text" 
-                value={inviteCode} 
-                onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
-                placeholder="6-character code"
-                style={{ fontSize: '1.5rem', textAlign: 'center', letterSpacing: '0.2rem' }}
-              />
-            </div>
-            {error && <div className="alert alert--error">{error}</div>}
-            <button 
-              className="btn btn--primary btn--full" 
-              onClick={() => verifyInviteCode(inviteCode)}
-              disabled={loading || !inviteCode}
-            >
-              {loading ? 'Verifying...' : 'Continue'}
-            </button>
-            <p style={{ marginTop: '1rem', textAlign: 'center' }}>
-              Already have an account? <Link to="/login">Login</Link>
-            </p>
+      <div className="auth-container">
+        <div className="auth-card">
+          <div className="auth-header">
+            <div className="auth-logo">🏘️</div>
+            <h1 className="auth-title">SocietySync</h1>
+            <p className="auth-subtitle">Join Your Digital Community</p>
           </div>
-        )}
 
-        {step === 2 && society && (
-          <form onSubmit={handleRegister} className="setup-form">
-            <div className="society-brief-card" style={{ 
-              background: 'rgba(255,255,255,0.05)', 
-              padding: '1rem', 
-              borderRadius: '8px', 
-              marginBottom: '1.5rem',
-              border: '1px solid rgba(255,255,255,0.1)'
-            }}>
-              <h3 style={{ margin: 0, color: 'var(--primary)' }}>{society.name}</h3>
-              <p style={{ margin: '0.5rem 0 0', opacity: 0.7, fontSize: '0.9rem' }}>{society.address}</p>
-            </div>
+          {step === 1 && (
+            <div className="auth-form">
+              <div className="mb-4 text-center">
+                <h2 className="text-xl font-black text-slate-900">Enter Invite Code</h2>
+                <p className="text-xs text-secondary font-medium">Provided by your society admin</p>
+              </div>
 
-            <div className="form-group">
-              <label>Full Name</label>
-              <input type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} required />
-            </div>
-
-            <div className="form-row">
               <div className="form-group">
-                <label>Email</label>
-                <input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} required />
+                <input 
+                  type="text" 
+                  value={inviteCode} 
+                  onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
+                  placeholder="CODE24"
+                  className="w-full py-6 rounded-2xl bg-slate-50 border border-slate-100 focus:border-primary focus:bg-white outline-none transition-all text-3xl font-black text-center tracking-[0.5rem] text-primary"
+                />
               </div>
-              <div className="form-group">
-                <label>Phone</label>
-                <input type="text" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} required />
-              </div>
-            </div>
 
-            <div className="form-group">
-              <label>Password</label>
-              <input type="password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} required />
-            </div>
+              {error && (
+                <div className="p-3 bg-rose-50 border border-rose-100 text-rose-500 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2">
+                  <span>⚠️</span> {error}
+                </div>
+              )}
 
-            <div className="form-row">
-              <div className="form-group">
-                <label>Block</label>
-                <select value={formData.blockId} onChange={handleBlockChange} required>
-                  <option value="">Select Block</option>
-                  {blocks.map(b => <option key={b._id} value={b._id}>{b.name}</option>)}
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Flat</label>
-                <select value={formData.flatId} onChange={e => setFormData({...formData, flatId: e.target.value})} required disabled={!formData.blockId}>
-                  <option value="">Select Flat</option>
-                  {flats.map(f => <option key={f._id} value={f._id}>Flat {f.number} {f.floor ? `(Floor ${f.floor})` : ''}</option>)}
-                </select>
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label>Resident Type</label>
-              <div className="radio-group" style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                  <input type="radio" checked={formData.residentType === 'owner'} onChange={() => setFormData({...formData, residentType: 'owner'})} />
-                  Owner
-                </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                  <input type="radio" checked={formData.residentType === 'tenant'} onChange={() => setFormData({...formData, residentType: 'tenant'})} />
-                  Tenant
-                </label>
-              </div>
-            </div>
-
-            {error && <div className="alert alert--error">{error}</div>}
-            
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              <button type="button" className="btn btn--outline" onClick={() => setStep(1)}>Back</button>
-              <button type="submit" className="btn btn--primary btn--full" disabled={loading}>
-                {loading ? 'Registering...' : 'Register & Request Access'}
+              <button 
+                className="btn btn--primary w-full py-4 rounded-2xl shadow-lg shadow-primary/20 mt-4" 
+                onClick={() => verifyInviteCode(inviteCode)}
+                disabled={loading || !inviteCode}
+              >
+                {loading ? <span className="btn-spinner"></span> : 'Verify Code'}
               </button>
+
+              <p className="auth-link">
+                Already registered? <Link to="/login">Sign In</Link>
+              </p>
             </div>
-          </form>
-        )}
+          )}
+
+          {step === 2 && society && (
+            <form onSubmit={handleRegister} className="auth-form">
+              <div className="bg-primary/5 border border-primary/10 p-4 rounded-2xl mb-6 relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-2 opacity-5 text-4xl group-hover:rotate-12 transition-transform">🏢</div>
+                <h3 className="text-sm font-black text-primary uppercase tracking-tight truncate">{society.name}</h3>
+                <p className="text-[10px] font-bold text-secondary truncate mt-1">{society.address}</p>
+              </div>
+
+              <div className="grid gap-4">
+                <div className="form-group">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-secondary mb-1">Full Name</label>
+                  <input type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="e.g. John Doe" required
+                    className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-100 focus:border-primary focus:bg-white outline-none transition-all text-sm font-medium" />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="form-group">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-secondary mb-1">Email</label>
+                    <input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} placeholder="email@ext.com" required
+                      className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-100 focus:border-primary focus:bg-white outline-none transition-all text-sm font-medium" />
+                  </div>
+                  <div className="form-group">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-secondary mb-1">Phone</label>
+                    <input type="tel" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} placeholder="+91..." required
+                      className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-100 focus:border-primary focus:bg-white outline-none transition-all text-sm font-medium" />
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-secondary mb-1">Security Key</label>
+                  <input type="password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} placeholder="••••••••" required
+                    className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-100 focus:border-primary focus:bg-white outline-none transition-all text-sm font-medium" />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="form-group">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-secondary mb-1">Block</label>
+                    <select value={formData.blockId} onChange={handleBlockChange} required
+                      className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-100 focus:border-primary focus:bg-white outline-none transition-all text-sm font-medium">
+                      <option value="">Select</option>
+                      {blocks.map(b => <option key={b._id} value={b._id}>{b.name}</option>)}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-secondary mb-1">Flat</label>
+                    <select value={formData.flatId} onChange={e => setFormData({...formData, flatId: e.target.value})} required disabled={!formData.blockId}
+                      className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-100 focus:border-primary focus:bg-white outline-none transition-all text-sm font-medium">
+                      <option value="">Select</option>
+                      {flats.map(f => <option key={f._id} value={f._id}>Flat {f.number}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-secondary mb-1">Resident Type</label>
+                  <div className="flex gap-4 mt-2">
+                    {['owner', 'tenant'].map(type => (
+                      <label key={type} className="flex-1 cursor-pointer">
+                        <input type="radio" className="hidden" checked={formData.residentType === type} onChange={() => setFormData({...formData, residentType: type})} />
+                        <div className={`py-3 rounded-xl text-center text-xs font-black uppercase tracking-widest transition-all border ${formData.residentType === type ? 'bg-primary border-primary text-white shadow-lg' : 'bg-slate-50 border-slate-100 text-secondary'}`}>
+                          {type}
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {error && (
+                <div className="p-3 bg-rose-50 border border-rose-100 text-rose-500 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2">
+                  <span>⚠️</span> {error}
+                </div>
+              )}
+              
+              <div className="flex gap-4 mt-6">
+                <button type="button" className="btn btn--secondary flex-1 py-4 rounded-2xl" onClick={() => setStep(1)}>Back</button>
+                <button type="submit" className="btn btn--primary flex-[2] py-4 rounded-2xl shadow-lg shadow-primary/20" disabled={loading}>
+                  {loading ? <span className="btn-spinner"></span> : 'Request Access'}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
       </div>
     </div>
+  );
+};
   );
 };
 

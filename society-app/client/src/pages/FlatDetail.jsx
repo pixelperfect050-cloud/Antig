@@ -122,87 +122,133 @@ const FlatDetail = () => {
 
   return (
     <div className="page">
-      <div className="page-header">
-        <div>
-          <div className="breadcrumb">
-            <Link to="/blocks" className="breadcrumb-link">Blocks</Link>
-            <span className="breadcrumb-sep">›</span>
-            <Link to={`/blocks/${flat.blockId?._id || flat.blockId}/flats`} className="breadcrumb-link">
+      <header className="page-header">
+        <div className="page-title-group">
+          <div className="breadcrumb flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-secondary mb-1">
+            <Link to="/blocks" className="hover:text-primary">Blocks</Link>
+            <span>›</span>
+            <Link to={`/blocks/${flat.blockId?._id || flat.blockId}/flats`} className="hover:text-primary truncate max-w-[80px]">
               Block {flat.blockId?.name}
             </Link>
-            <span className="breadcrumb-sep">›</span>
-            <span>{flat.number}</span>
+            <span>›</span>
+            <span className="text-text">{flat.number}</span>
           </div>
           <h1 className="page-title">Flat {flat.number}</h1>
         </div>
         {isAdmin && (
-          <button className="btn btn--outline" onClick={() => setShowEditModal(true)} id="edit-flat-btn">
-            ✏️ Edit Details
+          <button className="btn btn--outline btn--sm mt-2 sm:mt-0" onClick={() => setShowEditModal(true)}>
+            ✏️ Edit
           </button>
         )}
-      </div>
+      </header>
 
-      {/* Flat Info Cards */}
-      <div className="flat-detail-grid">
-        <div className="card flat-info-card">
-          <h3 className="card-title">Owner Information</h3>
-          <div className="info-rows">
-            <div className="info-row"><span className="info-label">👤 Owner</span><span className="info-value">{flat.ownerName}</span></div>
-            <div className="info-row"><span className="info-label">📱 Phone</span><span className="info-value">{flat.ownerPhone || '-'}</span></div>
-            <div className="info-row"><span className="info-label">📧 Email</span><span className="info-value">{flat.ownerEmail || '-'}</span></div>
-            {flat.tenantName && <div className="info-row"><span className="info-label">🏠 Tenant</span><span className="info-value">{flat.tenantName}</span></div>}
-            <div className="info-row"><span className="info-label">📐 Type</span><span className="info-value">{flat.type} • {flat.area} sq.ft</span></div>
+      {/* Responsive Info Grid */}
+      <div className="dashboard-row mb-6">
+        <div className="card">
+          <div className="card-header">
+            <h3 className="card-title">Resident Details</h3>
+          </div>
+          <div className="p-4 flex flex-col gap-4">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-full bg-primary-light text-primary flex items-center justify-center text-xl font-bold">
+                {flat.ownerName?.charAt(0)}
+              </div>
+              <div className="flex-1">
+                <p className="text-xs font-black text-secondary uppercase tracking-tighter">Owner</p>
+                <p className="font-bold text-lg">{flat.ownerName}</p>
+                <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
+                  <span className="text-xs font-bold text-secondary flex items-center gap-1">📱 {flat.ownerPhone || 'N/A'}</span>
+                  <span className="text-xs font-bold text-secondary flex items-center gap-1">📧 {flat.ownerEmail || 'N/A'}</span>
+                </div>
+              </div>
+            </div>
+            
+            {flat.tenantName && (
+              <div className="pt-4 border-t border-slate-100 flex items-start gap-4">
+                <div className="w-10 h-10 rounded-full bg-slate-100 text-secondary flex items-center justify-center text-lg font-bold">
+                  {flat.tenantName?.charAt(0)}
+                </div>
+                <div>
+                  <p className="text-xs font-black text-secondary uppercase tracking-tighter">Tenant</p>
+                  <p className="font-bold">{flat.tenantName}</p>
+                </div>
+              </div>
+            )}
+
+            <div className="mt-2 flex gap-4 p-3 bg-slate-50 rounded-xl">
+              <div>
+                <p className="text-[10px] font-black text-secondary uppercase">Type</p>
+                <p className="font-bold text-sm">{flat.type}</p>
+              </div>
+              <div className="w-px h-8 bg-slate-200"></div>
+              <div>
+                <p className="text-[10px] font-black text-secondary uppercase">Area</p>
+                <p className="font-bold text-sm">{flat.area} sq.ft</p>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="card flat-summary-card premium-card">
-          <h3 className="card-title">Payment Summary</h3>
-          <div className="summary-stats">
-            <div className="summary-stat summary-stat--paid">
-              <span className="summary-label">Total Paid</span>
-              <span className="summary-value">{formatCurrency(totalPaid)}</span>
-            </div>
-            <div className="summary-stat summary-stat--due">
-              <span className="summary-label">Total Due</span>
-              <span className="summary-value" style={{ color: totalDue > 0 ? 'var(--error)' : 'inherit' }}>{formatCurrency(totalDue)}</span>
-            </div>
-          </div>
+        <div className="card bg-slate-900 text-white border-none shadow-xl relative overflow-hidden">
+          {/* Decorative Background */}
+          <div className="absolute top-0 right-0 w-32 h-32 bg-primary opacity-20 blur-3xl -mr-16 -mt-16 rounded-full"></div>
           
-          {totalDue > 0 && !isAdmin && (
-            <div style={{ marginTop: '1.5rem', padding: '1rem', background: 'var(--primary-glow)', borderRadius: '12px', border: '1px solid var(--primary)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-                <span style={{ fontSize: '1.5rem' }}>📱</span>
-                <div>
-                  <h4 style={{ fontSize: '0.9rem', fontWeight: '700' }}>Quick Pay via UPI</h4>
-                  <p style={{ fontSize: '0.7rem', opacity: 0.7 }}>Scan & pay instantly</p>
-                </div>
+          <div className="card-header border-slate-800">
+            <h3 className="card-title text-slate-300">Account Summary</h3>
+          </div>
+          <div className="p-4 relative z-10">
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="bg-slate-800/50 p-4 rounded-2xl border border-slate-700">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Paid</p>
+                <p className="text-xl font-black text-emerald-400">{formatCurrency(totalPaid)}</p>
               </div>
-              <div style={{ background: '#fff', padding: '1rem', borderRadius: '8px', display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
-                {/* Mock QR Code */}
-                <div style={{ width: '120px', height: '120px', background: '#f1f5f9', border: '8px solid #fff', borderRadius: '4px', position: 'relative', overflow: 'hidden' }}>
-                  <div style={{ position: 'absolute', inset: '10px', background: 'url("https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=upi://pay?pa=society@upi&am=' + totalDue + '&tn=Maintenance") center/cover no-repeat' }}></div>
-                  <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: '#fff', padding: '4px', borderRadius: '4px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-                    🏘️
+              <div className="bg-slate-800/50 p-4 rounded-2xl border border-slate-700">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Due</p>
+                <p className={`text-xl font-black ${totalDue > 0 ? 'text-rose-400' : 'text-slate-400'}`}>{formatCurrency(totalDue)}</p>
+              </div>
+            </div>
+
+            {totalDue > 0 && !isAdmin && (
+              <div className="bg-white text-slate-900 p-4 rounded-2xl shadow-2xl">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-xl">📱</div>
+                  <div>
+                    <p className="text-sm font-black">Scan to Pay</p>
+                    <p className="text-[10px] font-bold text-slate-500">Instant UPI Payment</p>
                   </div>
                 </div>
+                <div className="flex justify-center mb-4">
+                  <div className="p-3 bg-white border-2 border-slate-100 rounded-2xl relative">
+                    <img 
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=upi://pay?pa=society@upi&am=${totalDue}&tn=Maintenance_${flat.number}`}
+                      alt="Payment QR"
+                      className="w-32 h-32"
+                    />
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white p-1 rounded-lg shadow-lg text-lg">🏘️</div>
+                  </div>
+                </div>
+                <button className="btn btn--primary w-full rounded-xl py-4 font-black">
+                  OPEN UPI APPS
+                </button>
               </div>
-              <button className="btn btn--primary btn--full" style={{ borderRadius: '25px' }}>
-                Open PhonePe / GPay
-              </button>
-            </div>
-          )}
+            )}
 
-          <div className={`flat-status-badge flat-status-badge--${flat.currentMonthStatus}`} style={{ marginTop: totalDue > 0 && !isAdmin ? '1.5rem' : '1rem' }}>
-            {flat.currentMonthStatus === 'paid' ? '✅ Current Month Paid' :
-             flat.currentMonthStatus === 'partial' ? '🔶 Partially Paid' : '⏳ Payment Pending'}
+            <div className={`mt-4 p-3 rounded-xl text-center text-xs font-black uppercase tracking-widest ${
+              flat.currentMonthStatus === 'paid' ? 'bg-emerald-500/20 text-emerald-400' :
+              flat.currentMonthStatus === 'partial' ? 'bg-amber-500/20 text-amber-400' : 'bg-rose-500/20 text-rose-400'
+            }`}>
+              {flat.currentMonthStatus === 'paid' ? 'Current Month Paid' :
+               flat.currentMonthStatus === 'partial' ? 'Partially Paid' : 'Payment Pending'}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Payment History */}
-      <div className="card">
+      {/* Detailed Payment History */}
+      <div className="card mb-8">
         <div className="card-header">
           <h3 className="card-title">Payment History</h3>
+          <span className="card-badge">{payments?.length || 0} Records</span>
         </div>
         <div className="table-wrapper">
           <table className="table">
@@ -211,137 +257,135 @@ const FlatDetail = () => {
                 <th>Month</th>
                 <th>Amount</th>
                 <th>Paid</th>
-                <th>Due</th>
                 <th>Status</th>
-                <th>Method</th>
-                <th>Date</th>
                 <th>Action</th>
               </tr>
             </thead>
             <tbody>
               {payments?.map((p, i) => (
                 <tr key={i}>
-                  <td className="font-medium">{MONTHS[p.month - 1]} {p.year}</td>
-                  <td>{formatCurrency(p.amount)}</td>
-                  <td className="text-success">{formatCurrency(p.paidAmount)}</td>
-                  <td className="text-danger">{formatCurrency(Math.max(0, p.amount - p.paidAmount))}</td>
+                  <td className="font-bold">
+                    <div className="flex flex-col">
+                      <span>{MONTHS[p.month - 1]} {p.year}</span>
+                      <span className="text-[9px] font-bold text-secondary uppercase">{p.paymentMethod || '-'}</span>
+                    </div>
+                  </td>
+                  <td className="font-black">{formatCurrency(p.amount)}</td>
+                  <td className="text-emerald-600 font-bold">{formatCurrency(p.paidAmount)}</td>
                   <td><span className={`status-badge status-badge--${p.status}`}>{p.status}</span></td>
-                  <td>{p.paymentMethod || '-'}</td>
-                  <td>{p.paidDate ? new Date(p.paidDate).toLocaleDateString('en-IN') : '-'}</td>
                   <td>
-                    <div className="btn-group">
-                        <button className="btn--icon" onClick={() => handleDownloadReceipt(p)} title="Download Receipt">
-                          📥
-                        </button>
+                    <div className="flex gap-2">
+                      <button className="btn--icon" onClick={() => handleDownloadReceipt(p)}>📥</button>
                       {isAdmin && p.status !== 'paid' && (
-                        <button className="btn btn--sm btn--primary" onClick={() => handleRecordPayment(p)}>
-                          💰 Record
-                        </button>
+                        <button className="btn btn--sm btn--primary px-3" onClick={() => handleRecordPayment(p)}>💰 Record</button>
                       )}
                     </div>
                   </td>
                 </tr>
               ))}
               {(!payments || payments.length === 0) && (
-                <tr><td colSpan={8} className="text-center text-muted">No payment records</td></tr>
+                <tr><td colSpan={5} className="text-center p-12 text-secondary font-bold">No payment history found.</td></tr>
               )}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* Record Payment Modal */}
+      {/* Optimized Modals */}
       <Modal isOpen={showPaymentModal} onClose={() => setShowPaymentModal(false)} title="Record Payment">
-        <form onSubmit={submitPayment} className="modal-form">
-          <div className="payment-info-box">
-            <p>Recording for: <strong>{MONTHS[(selectedPayment?.month || 1) - 1]} {selectedPayment?.year}</strong></p>
-            <p>Remaining: <strong>{formatCurrency((selectedPayment?.amount || 0) - (selectedPayment?.paidAmount || 0))}</strong></p>
-          </div>
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="pay-amount">Amount Paid</label>
-              <input type="number" id="pay-amount" min="1" value={paymentForm.paidAmount}
-                onChange={e => setPaymentForm({ ...paymentForm, paidAmount: e.target.value })} required />
+        <form onSubmit={submitPayment} className="modal-form p-4">
+          <div className="mb-4 p-4 bg-slate-50 rounded-2xl flex justify-between items-center">
+            <div>
+              <p className="text-[10px] font-black text-secondary uppercase tracking-widest">Period</p>
+              <p className="font-black">{MONTHS[(selectedPayment?.month || 1) - 1]} {selectedPayment?.year}</p>
             </div>
-            <div className="form-group">
-              <label htmlFor="pay-latefee">Late Fee (₹)</label>
-              <input type="number" id="pay-latefee" min="0" value={paymentForm.lateFee}
-                onChange={e => setPaymentForm({ ...paymentForm, lateFee: e.target.value })} />
+            <div className="text-right">
+              <p className="text-[10px] font-black text-secondary uppercase tracking-widest">Remaining</p>
+              <p className="font-black text-rose-500">{formatCurrency((selectedPayment?.amount || 0) - (selectedPayment?.paidAmount || 0))}</p>
             </div>
           </div>
-          <div className="form-group">
-            <label htmlFor="pay-method">Payment Method</label>
-            <select id="pay-method" value={paymentForm.paymentMethod}
-              onChange={e => setPaymentForm({ ...paymentForm, paymentMethod: e.target.value })}>
-              <option value="cash">Cash</option>
-              <option value="upi">UPI</option>
-              <option value="bank_transfer">Bank Transfer</option>
-              <option value="cheque">Cheque</option>
-              <option value="online">Online</option>
-            </select>
+          
+          <div className="grid gap-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="form-group">
+                <label>Paid Amount</label>
+                <input type="number" min="1" value={paymentForm.paidAmount}
+                  onChange={e => setPaymentForm({ ...paymentForm, paidAmount: e.target.value })} required />
+              </div>
+              <div className="form-group">
+                <label>Late Fee</label>
+                <input type="number" min="0" value={paymentForm.lateFee}
+                  onChange={e => setPaymentForm({ ...paymentForm, lateFee: e.target.value })} />
+              </div>
+            </div>
+            
+            <div className="form-group">
+              <label>Method</label>
+              <select value={paymentForm.paymentMethod} onChange={e => setPaymentForm({ ...paymentForm, paymentMethod: e.target.value })}>
+                <option value="cash">Cash</option>
+                <option value="upi">UPI</option>
+                <option value="bank_transfer">Bank Transfer</option>
+                <option value="cheque">Cheque</option>
+              </select>
+            </div>
+            
+            <div className="form-group">
+              <label>Reference / Notes</label>
+              <input type="text" value={paymentForm.transactionId}
+                onChange={e => setPaymentForm({ ...paymentForm, transactionId: e.target.value })} placeholder="Txn ID / Cheque No." />
+            </div>
           </div>
-          <div className="form-group">
-            <label htmlFor="pay-txn">Transaction ID (Optional)</label>
-            <input type="text" id="pay-txn" value={paymentForm.transactionId}
-              onChange={e => setPaymentForm({ ...paymentForm, transactionId: e.target.value })} />
-          </div>
-          <div className="form-group">
-            <label htmlFor="pay-notes">Notes (Optional)</label>
-            <input type="text" id="pay-notes" value={paymentForm.notes}
-              onChange={e => setPaymentForm({ ...paymentForm, notes: e.target.value })} />
-          </div>
-          <div className="modal-actions">
-            <button type="button" className="btn btn--ghost" onClick={() => setShowPaymentModal(false)}>Cancel</button>
-            <button type="submit" className="btn btn--primary" disabled={saving}>
-              {saving ? <span className="btn-spinner"></span> : 'Record Payment'}
+
+          <div className="modal-actions mt-8">
+            <button type="button" className="btn btn--secondary flex-1" onClick={() => setShowPaymentModal(false)}>Cancel</button>
+            <button type="submit" className="btn btn--primary flex-1" disabled={saving}>
+              {saving ? <span className="btn-spinner"></span> : 'Save Payment'}
             </button>
           </div>
         </form>
       </Modal>
 
-      {/* Edit Flat Modal */}
-      <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} title="Edit Flat Details">
-        <form onSubmit={submitEdit} className="modal-form">
-          <div className="form-group">
-            <label htmlFor="edit-owner">Owner Name</label>
-            <input type="text" id="edit-owner" value={editForm.ownerName || ''}
-              onChange={e => setEditForm({ ...editForm, ownerName: e.target.value })} />
-          </div>
-          <div className="form-row">
+      <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} title="Edit Flat">
+        <form onSubmit={submitEdit} className="modal-form p-4 max-h-[80vh] overflow-y-auto no-scrollbar">
+          <div className="grid gap-4">
             <div className="form-group">
-              <label htmlFor="edit-phone">Phone</label>
-              <input type="text" id="edit-phone" value={editForm.ownerPhone || ''}
-                onChange={e => setEditForm({ ...editForm, ownerPhone: e.target.value })} />
+              <label>Owner Name</label>
+              <input type="text" value={editForm.ownerName || ''}
+                onChange={e => setEditForm({ ...editForm, ownerName: e.target.value })} />
             </div>
-            <div className="form-group">
-              <label htmlFor="edit-email">Email</label>
-              <input type="email" id="edit-email" value={editForm.ownerEmail || ''}
-                onChange={e => setEditForm({ ...editForm, ownerEmail: e.target.value })} />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="form-group">
+                <label>Phone</label>
+                <input type="text" value={editForm.ownerPhone || ''}
+                  onChange={e => setEditForm({ ...editForm, ownerPhone: e.target.value })} />
+              </div>
+              <div className="form-group">
+                <label>Email</label>
+                <input type="email" value={editForm.ownerEmail || ''}
+                  onChange={e => setEditForm({ ...editForm, ownerEmail: e.target.value })} />
+              </div>
             </div>
-          </div>
-          <div className="form-row">
-            <div className="form-group">
-              <label htmlFor="edit-type">Flat Type</label>
-              <select id="edit-type" value={editForm.type || '2BHK'}
-                onChange={e => setEditForm({ ...editForm, type: e.target.value })}>
-                <option value="1BHK">1BHK</option>
-                <option value="2BHK">2BHK</option>
-                <option value="3BHK">3BHK</option>
-                <option value="4BHK">4BHK</option>
-                <option value="Studio">Studio</option>
-                <option value="Penthouse">Penthouse</option>
-              </select>
-            </div>
-            <div className="form-group">
-              <label htmlFor="edit-area">Area (sq.ft)</label>
-              <input type="number" id="edit-area" value={editForm.area || 0}
-                onChange={e => setEditForm({ ...editForm, area: parseInt(e.target.value) })} />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="form-group">
+                <label>Type</label>
+                <select value={editForm.type || '2BHK'} onChange={e => setEditForm({ ...editForm, type: e.target.value })}>
+                  <option value="1BHK">1BHK</option>
+                  <option value="2BHK">2BHK</option>
+                  <option value="3BHK">3BHK</option>
+                  <option value="4BHK">4BHK</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Area (sq.ft)</label>
+                <input type="number" value={editForm.area || 0}
+                  onChange={e => setEditForm({ ...editForm, area: parseInt(e.target.value) })} />
+              </div>
             </div>
           </div>
-          <div className="modal-actions">
-            <button type="button" className="btn btn--ghost" onClick={() => setShowEditModal(false)}>Cancel</button>
-            <button type="submit" className="btn btn--primary" disabled={saving}>
-              {saving ? <span className="btn-spinner"></span> : 'Save Changes'}
+          <div className="modal-actions mt-8">
+            <button type="button" className="btn btn--secondary flex-1" onClick={() => setShowEditModal(false)}>Cancel</button>
+            <button type="submit" className="btn btn--primary flex-1" disabled={saving}>
+              {saving ? <span className="btn-spinner"></span> : 'Update Details'}
             </button>
           </div>
         </form>

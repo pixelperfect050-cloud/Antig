@@ -103,9 +103,13 @@ const Dashboard = () => {
       <div className="page">
         <div className="empty-state">
           <div className="empty-icon">🏢</div>
-          <h2>Welcome to SocietySync!</h2>
-          <p>You haven't been assigned to a society yet. Please contact your society admin or set up a new society.</p>
-          {isAdmin && <a href="/setup" className="btn btn--primary">Setup Society</a>}
+          <h1 className="page-title text-center">Welcome!</h1>
+          <p className="text-center text-secondary">You haven't been assigned to a society yet. Please contact your society admin or set up a new society.</p>
+          {isAdmin && (
+            <div className="mt-4 flex justify-center">
+              <button onClick={() => navigate('/setup')} className="btn btn--primary">Setup Society</button>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -122,175 +126,181 @@ const Dashboard = () => {
 
     return (
       <div className="page">
-        <div className="page-header">
-          <div>
+        <header className="page-header">
+          <div className="page-title-group">
             <h1 className="page-title">Dashboard</h1>
             <p className="page-subtitle">Overview of your society</p>
           </div>
-        </div>
+        </header>
 
-        {/* Alerts */}
+        {/* Alerts Section */}
         {(stats.pendingPaymentRequests > 0 || stats.pendingFundVerifications > 0) && (
-          <div className="alert alert--warning" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
-            <span style={{ flex: 1, minWidth: 0 }}>
-              {stats.pendingPaymentRequests > 0 && <span>💰 <strong>{stats.pendingPaymentRequests}</strong> payment(s) awaiting verification. </span>}
-              {stats.pendingFundVerifications > 0 && <span>📢 <strong>{stats.pendingFundVerifications}</strong> fund payment(s) need review.</span>}
-            </span>
-            <button className="btn btn--primary btn--sm" style={{ flexShrink: 0 }} onClick={() => navigate('/payment-verification')}>Review Now</button>
+          <div className="alert alert--warning mb-4">
+            <div className="flex items-center gap-2 flex-1">
+              <span>⚠️</span>
+              <div>
+                {stats.pendingPaymentRequests > 0 && <p><strong>{stats.pendingPaymentRequests}</strong> maintenance payments pending.</p>}
+                {stats.pendingFundVerifications > 0 && <p><strong>{stats.pendingFundVerifications}</strong> fund payments need review.</p>}
+              </div>
+            </div>
+            <button className="btn btn--primary btn--sm" onClick={() => navigate('/payment-verification')}>Review</button>
           </div>
         )}
 
-        {/* Stats Grid */}
+        {/* Primary Stats Grid */}
         <div className="stats-grid">
           <StatsCard icon="💰" label="Total Collection" value={formatCurrency(stats.totalCollection)} color="success" />
           <StatsCard icon="📤" label="Total Expenses" value={formatCurrency(stats.totalExpenses)} color="danger" />
-          <StatsCard icon="💎" label="Current Balance" value={formatCurrency(stats.currentBalance)} color="primary" />
-          <StatsCard icon="📅" label="This Month" value={formatCurrency(stats.monthCollection)} subValue={`Due: ${formatCurrency(stats.monthDue)}`} color="warning" />
+          <StatsCard icon="💎" label="Balance" value={formatCurrency(stats.currentBalance)} color="primary" />
+          <StatsCard icon="📅" label="This Month" value={formatCurrency(stats.monthCollection)} color="warning" />
         </div>
 
-        {/* Fund Stats */}
+        {/* Fund Stats - Collapsible/Adaptive */}
         {stats.activeFundsCount > 0 && (
-          <div className="stats-grid stats-grid--3" style={{ marginTop: '1rem' }}>
+          <div className="stats-grid mb-4">
             <StatsCard icon="📢" label="Fund Target" value={formatCurrency(stats.totalFundTarget)} color="primary" />
             <StatsCard icon="✅" label="Fund Collected" value={formatCurrency(stats.totalFundCollected)} color="success" />
             <StatsCard icon="⏳" label="Fund Pending" value={formatCurrency(stats.totalFundPending)} color="warning" />
           </div>
         )}
 
-        {/* Flat Status Overview */}
         <div className="dashboard-row">
+          {/* Status Overview Card */}
           <div className="card">
             <div className="card-header">
-              <h3 className="card-title">Flat Status Overview</h3>
-              <span className="card-badge">{stats.totalFlats} flats</span>
+              <h3 className="card-title">Flat Payment Status</h3>
+              <span className="card-badge">{stats.totalFlats} Flats</span>
             </div>
-            <div className="flat-status-bars">
-              <div className="status-bar-row">
-                <span className="status-label">✅ Paid</span>
+            <div className="flat-status-bars p-4">
+              <div className="status-bar-row mb-4">
+                <div className="flex justify-between mb-1">
+                  <span className="status-label">Paid</span>
+                  <span className="status-count">{stats.paidFlats}</span>
+                </div>
                 <div className="status-bar-track">
                   <div className="status-bar-fill status-bar--paid" style={{ width: `${(stats.paidFlats / Math.max(stats.totalFlats, 1)) * 100}%` }}></div>
                 </div>
-                <span className="status-count">{stats.paidFlats}</span>
               </div>
-              <div className="status-bar-row">
-                <span className="status-label">⏳ Pending</span>
+              <div className="status-bar-row mb-4">
+                <div className="flex justify-between mb-1">
+                  <span className="status-label">Pending</span>
+                  <span className="status-count">{stats.pendingFlats}</span>
+                </div>
                 <div className="status-bar-track">
                   <div className="status-bar-fill status-bar--pending" style={{ width: `${(stats.pendingFlats / Math.max(stats.totalFlats, 1)) * 100}%` }}></div>
                 </div>
-                <span className="status-count">{stats.pendingFlats}</span>
               </div>
               <div className="status-bar-row">
-                <span className="status-label">🔶 Partial</span>
+                <div className="flex justify-between mb-1">
+                  <span className="status-label">Partial</span>
+                  <span className="status-count">{stats.partialFlats}</span>
+                </div>
                 <div className="status-bar-track">
                   <div className="status-bar-fill status-bar--partial" style={{ width: `${(stats.partialFlats / Math.max(stats.totalFlats, 1)) * 100}%` }}></div>
                 </div>
-                <span className="status-count">{stats.partialFlats}</span>
               </div>
             </div>
           </div>
 
+          {/* Quick Metrics Card */}
           <div className="card">
             <div className="card-header">
-              <h3 className="card-title">Quick Stats</h3>
+              <h3 className="card-title">Society Metrics</h3>
             </div>
-            <div className="quick-stats">
-              <div className="quick-stat">
-                <span className="quick-stat-icon">🏢</span>
+            <div className="quick-stats p-4 grid grid-cols-2 gap-4">
+              <div className="quick-stat flex items-center gap-3">
+                <span className="text-2xl">🏢</span>
                 <div>
-                  <span className="quick-stat-value">{stats.totalBlocks}</span>
-                  <span className="quick-stat-label">Blocks</span>
+                  <p className="font-bold text-lg">{stats.totalBlocks}</p>
+                  <p className="text-xs text-secondary">Blocks</p>
                 </div>
               </div>
-              <div className="quick-stat">
-                <span className="quick-stat-icon">🏠</span>
+              <div className="quick-stat flex items-center gap-3">
+                <span className="text-2xl">👥</span>
                 <div>
-                  <span className="quick-stat-value">{stats.totalFlats}</span>
-                  <span className="quick-stat-label">Flats</span>
+                  <p className="font-bold text-lg">{stats.totalMembers}</p>
+                  <p className="text-xs text-secondary">Members</p>
                 </div>
               </div>
-              <div className="quick-stat">
-                <span className="quick-stat-icon">👥</span>
+              <div className="quick-stat flex items-center gap-3">
+                <span className="text-2xl">⚡</span>
                 <div>
-                  <span className="quick-stat-value">{stats.totalMembers}</span>
-                  <span className="quick-stat-label">Members</span>
+                  <p className="font-bold text-lg">{formatCurrency(stats.monthExpenseTotal)}</p>
+                  <p className="text-xs text-secondary">Exp / Month</p>
                 </div>
               </div>
-              <div className="quick-stat">
-                <span className="quick-stat-icon">📅</span>
+              <div className="quick-stat flex items-center gap-3">
+                <span className="text-2xl">🏘️</span>
                 <div>
-                  <span className="quick-stat-value">{formatCurrency(stats.monthExpenseTotal)}</span>
-                  <span className="quick-stat-label">Month Expenses</span>
+                  <p className="font-bold text-lg">{stats.totalFlats}</p>
+                  <p className="text-xs text-secondary">Total Flats</p>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Charts Row */}
+        {/* Visualization Section */}
         <div className="dashboard-row">
-          {/* Collection Trend Bar Chart */}
           <div className="card">
             <div className="card-header">
-              <h3 className="card-title">Collection Trend (Last 6 Months)</h3>
+              <h3 className="card-title">Collection Trend</h3>
             </div>
-            <div className="chart-container">
-              <div className="bar-chart">
+            <div className="chart-container p-4">
+              <div className="bar-chart flex items-end gap-2" style={{ height: '180px' }}>
                 {stats.monthlyTrend?.map((m, i) => (
-                  <div key={i} className="bar-group">
-                    <div className="bar-wrapper">
-                      <div className="bar bar--collected" style={{ height: `${(m.collected / maxCollection) * 100}%` }}
-                        title={formatCurrency(m.collected)}>
-                      </div>
+                  <div key={i} className="bar-group flex-1 flex flex-col items-center">
+                    <div className="bar-wrapper w-full flex items-end justify-center flex-1">
+                      <div 
+                        className="bar bar--collected w-4/5 rounded-t-md" 
+                        style={{ 
+                          height: `${(m.collected / maxCollection) * 100}%`,
+                          background: 'linear-gradient(180deg, var(--primary), var(--primary-light))'
+                        }}
+                        title={formatCurrency(m.collected)}
+                      ></div>
                     </div>
-                    <span className="bar-label">{m.label}</span>
+                    <span className="text-[10px] text-secondary mt-1 font-bold">{m.label}</span>
                   </div>
                 ))}
-              </div>
-              <div className="chart-legend">
-                <span className="legend-item"><span className="legend-dot legend-dot--collected"></span> Collected</span>
               </div>
             </div>
           </div>
 
-          {/* Expense Breakdown */}
           <div className="card">
             <div className="card-header">
               <h3 className="card-title">Expense Breakdown</h3>
             </div>
-            <div className="expense-breakdown">
+            <div className="expense-breakdown p-4 flex flex-col gap-4">
               {stats.expenseBreakdown?.map((exp, i) => (
                 <div key={i} className="expense-item">
-                  <div className="expense-info">
-                    <span className="expense-dot" style={{ background: categoryColors[exp._id] || '#6b7280' }}></span>
-                    <span className="expense-category">{exp._id}</span>
+                  <div className="flex justify-between mb-1">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full" style={{ background: categoryColors[exp._id] || '#6b7280' }}></span>
+                      <span className="text-xs font-bold capitalize">{exp._id}</span>
+                    </div>
+                    <span className="text-xs font-bold">{formatCurrency(exp.total)}</span>
                   </div>
-                  <div className="expense-bar-track">
-                    <div className="expense-bar-fill" style={{
+                  <div className="expense-bar-track h-2 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="expense-bar-fill h-full rounded-full" style={{
                       width: `${(exp.total / totalExp) * 100}%`,
                       background: categoryColors[exp._id] || '#6b7280'
                     }}></div>
                   </div>
-                  <span className="expense-amount">{formatCurrency(exp.total)}</span>
                 </div>
               ))}
               {(!stats.expenseBreakdown || stats.expenseBreakdown.length === 0) && (
-                <p className="text-muted">No expenses this month</p>
+                <p className="text-center text-secondary p-4">No expenses recorded yet.</p>
               )}
             </div>
           </div>
         </div>
 
+        {/* Member Requests Notification */}
         {isAdmin && stats.pendingMembersCount > 0 && (
-          <div className="alert alert--info" style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center',
-            marginBottom: '2rem',
-            flexWrap: 'wrap',
-            gap: '0.75rem'
-          }}>
-            <span style={{ flex: 1, minWidth: 0 }}>👋 You have <strong>{stats.pendingMembersCount}</strong> new resident join requests waiting for your approval.</span>
-            <button className="btn btn--primary btn--sm" style={{ flexShrink: 0 }} onClick={() => navigate('/requests')}>Review Requests</button>
+          <div className="alert alert--info mb-4">
+            <p className="flex-1">👋 You have <strong>{stats.pendingMembersCount}</strong> new resident requests.</p>
+            <button className="btn btn--primary btn--sm" onClick={() => navigate('/requests')}>Manage</button>
           </div>
         )}
       </div>
@@ -300,16 +310,17 @@ const Dashboard = () => {
   // Member Dashboard
   return (
     <div className="page">
-      <div className="page-header">
+      <header className="page-header">
         <div>
           <h1 className="page-title">My Dashboard</h1>
-          <p className="page-subtitle">Your payment overview</p>
+          <p className="page-subtitle">Your society account summary</p>
         </div>
-      </div>
+      </header>
 
       {stats?.pendingRequests > 0 && (
-        <div className="alert alert--info" style={{ marginBottom: '1rem' }}>
-          ⏳ You have <strong>{stats.pendingRequests}</strong> payment(s) pending verification by admin.
+        <div className="alert alert--info mb-4">
+          <span>⏳</span>
+          <p><strong>{stats.pendingRequests}</strong> payment(s) pending verification by admin.</p>
         </div>
       )}
 
@@ -320,10 +331,10 @@ const Dashboard = () => {
         <StatsCard icon="💰" label="Fund Due" value={formatCurrency(stats?.totalFundDue)} color="warning" />
       </div>
 
-      {/* Maintenance Section */}
-      <div className="card">
+      {/* Maintenance History */}
+      <div className="card mb-6">
         <div className="card-header">
-          <h3 className="card-title">Maintenance Payments</h3>
+          <h3 className="card-title">Payment History</h3>
         </div>
         <div className="table-wrapper">
           <table className="table">
@@ -331,24 +342,24 @@ const Dashboard = () => {
               <tr>
                 <th>Month</th>
                 <th>Amount</th>
-                <th>Paid</th>
                 <th>Status</th>
-                <th>Date</th>
-                <th>Action</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {stats?.payments?.map((p, i) => (
                 <tr key={i}>
-                  <td>{MONTHS[p.month - 1]} {p.year}</td>
+                  <td className="font-bold">{MONTHS[p.month - 1]} {p.year}</td>
                   <td>{formatCurrency(p.amount)}</td>
-                  <td>{formatCurrency(p.paidAmount)}</td>
-                  <td><span className={`status-badge status-badge--${p.status}`}>{p.status}</span></td>
-                  <td>{p.paidDate ? new Date(p.paidDate).toLocaleDateString('en-IN') : '-'}</td>
                   <td>
-                    <div className="btn-group">
+                    <span className={`status-badge status-badge--${p.status}`}>
+                      {p.status}
+                    </span>
+                  </td>
+                  <td>
+                    <div className="flex gap-2">
                       {p.status !== 'paid' && (
-                        <button className="btn btn--sm btn--primary" onClick={() => openPayModal(p)}>💰 Pay</button>
+                        <button className="btn btn--sm btn--primary" onClick={() => openPayModal(p)}>Pay</button>
                       )}
                       <button className="btn--icon" onClick={() => handleDownloadReceipt(p)} title="Download Receipt">📥</button>
                     </div>
@@ -356,18 +367,18 @@ const Dashboard = () => {
                 </tr>
               ))}
               {(!stats?.payments || stats.payments.length === 0) && (
-                <tr><td colSpan="6" className="text-center text-muted">No payment records</td></tr>
+                <tr><td colSpan="4" className="text-center text-secondary p-8">No records found.</td></tr>
               )}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* Fund Section */}
+      {/* Funds Section */}
       {stats?.fundPayments?.length > 0 && (
-        <div className="card" style={{ marginTop: '1.5rem' }}>
+        <div className="card">
           <div className="card-header">
-            <h3 className="card-title">Fund Contributions</h3>
+            <h3 className="card-title">Society Funds</h3>
           </div>
           <div className="table-wrapper">
             <table className="table">
@@ -375,7 +386,6 @@ const Dashboard = () => {
                 <tr>
                   <th>Fund</th>
                   <th>Amount</th>
-                  <th>Paid</th>
                   <th>Status</th>
                   <th>Action</th>
                 </tr>
@@ -383,9 +393,8 @@ const Dashboard = () => {
               <tbody>
                 {stats.fundPayments.map((fp, i) => (
                   <tr key={i}>
-                    <td className="font-medium">{fp.fundId?.name || 'Fund'}</td>
+                    <td className="font-bold">{fp.fundId?.name || 'Fund'}</td>
                     <td>{formatCurrency(fp.amount)}</td>
-                    <td className="text-success">{formatCurrency(fp.paidAmount)}</td>
                     <td>
                       <span className={`status-badge status-badge--${fp.status === 'paid' ? 'paid' : fp.status === 'pending_verification' ? 'warning' : 'pending'}`}>
                         {fp.status === 'paid' ? 'Paid' : fp.status === 'pending_verification' ? 'Verifying' : 'Pending'}
@@ -393,7 +402,7 @@ const Dashboard = () => {
                     </td>
                     <td>
                       {fp.status === 'pending' && (
-                        <button className="btn btn--sm btn--primary" onClick={() => navigate('/funds')}>💰 Pay</button>
+                        <button className="btn btn--sm btn--primary" onClick={() => navigate('/funds')}>Pay</button>
                       )}
                     </td>
                   </tr>
@@ -404,40 +413,43 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* Pay Maintenance Modal */}
+      {/* Responsive Pay Modal */}
       <Modal isOpen={showPayModal} onClose={() => setShowPayModal(false)} title="Submit Payment">
         {selectedPayment && (
-          <form onSubmit={submitPaymentRequest} className="modal-form">
-            <div className="payment-info-box">
-              <p>Paying for: <strong>{MONTHS[selectedPayment.month - 1]} {selectedPayment.year}</strong></p>
-              <p>Due: <strong>{formatCurrency(selectedPayment.amount - selectedPayment.paidAmount)}</strong></p>
+          <form onSubmit={submitPaymentRequest} className="modal-form p-4">
+            <div className="payment-info-box mb-4 p-3 bg-slate-50 rounded-lg border border-dashed border-slate-200">
+              <p className="text-xs text-secondary">Month</p>
+              <p className="font-bold mb-2">{MONTHS[selectedPayment.month - 1]} {selectedPayment.year}</p>
+              <p className="text-xs text-secondary">Due Amount</p>
+              <p className="font-bold text-primary text-xl">{formatCurrency(selectedPayment.amount - selectedPayment.paidAmount)}</p>
             </div>
-            <div className="form-group">
-              <label>Amount (₹)</label>
-              <input type="number" min="1" value={payForm.amount} onChange={e => setPayForm({ ...payForm, amount: e.target.value })} required />
+            
+            <div className="grid gap-4">
+              <div className="form-group">
+                <label className="text-sm font-bold">Amount to Pay</label>
+                <input type="number" min="1" value={payForm.amount} onChange={e => setPayForm({ ...payForm, amount: e.target.value })} required />
+              </div>
+              
+              <div className="form-group">
+                <label className="text-sm font-bold">Payment Mode</label>
+                <select value={payForm.paymentMethod} onChange={e => setPayForm({ ...payForm, paymentMethod: e.target.value })}>
+                  <option value="upi">UPI / GPay / PhonePe</option>
+                  <option value="bank_transfer">Net Banking</option>
+                  <option value="cash">Cash Payment</option>
+                  <option value="cheque">Cheque</option>
+                </select>
+              </div>
+              
+              <div className="form-group">
+                <label className="text-sm font-bold">Ref / Transaction ID</label>
+                <input type="text" value={payForm.transactionId} onChange={e => setPayForm({ ...payForm, transactionId: e.target.value })} placeholder="Enter Reference No." />
+              </div>
             </div>
-            <div className="form-group">
-              <label>Payment Method</label>
-              <select value={payForm.paymentMethod} onChange={e => setPayForm({ ...payForm, paymentMethod: e.target.value })}>
-                <option value="upi">UPI</option>
-                <option value="bank_transfer">Bank Transfer</option>
-                <option value="cash">Cash</option>
-                <option value="cheque">Cheque</option>
-                <option value="online">Online</option>
-              </select>
-            </div>
-            <div className="form-group">
-              <label>Transaction ID (Optional)</label>
-              <input type="text" value={payForm.transactionId} onChange={e => setPayForm({ ...payForm, transactionId: e.target.value })} placeholder="UPI/Bank ref number" />
-            </div>
-            <div className="form-group">
-              <label>Notes (Optional)</label>
-              <input type="text" value={payForm.notes} onChange={e => setPayForm({ ...payForm, notes: e.target.value })} />
-            </div>
-            <div className="modal-actions">
-              <button type="button" className="btn btn--ghost" onClick={() => setShowPayModal(false)}>Cancel</button>
-              <button type="submit" className="btn btn--primary" disabled={saving}>
-                {saving ? <span className="btn-spinner"></span> : 'Submit for Verification'}
+
+            <div className="modal-actions mt-6 flex gap-3">
+              <button type="button" className="btn btn--secondary flex-1" onClick={() => setShowPayModal(false)}>Cancel</button>
+              <button type="submit" className="btn btn--primary flex-1" disabled={saving}>
+                {saving ? <span className="btn-spinner"></span> : 'Submit Payment'}
               </button>
             </div>
           </form>
