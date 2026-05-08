@@ -114,7 +114,5 @@ const SetupSociety = () => {
     </div>
   );
 };
-  );
-};
 
 export default SetupSociety;

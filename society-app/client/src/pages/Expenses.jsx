@@ -241,8 +241,5 @@ const Expenses = () => {
     </div>
   );
 };
-    </div>
-  );
-};
 
 export default Expenses;

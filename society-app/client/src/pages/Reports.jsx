@@ -230,8 +230,5 @@ const Reports = () => {
     </div>
   );
 };
-    </div>
-  );
-};
 
 export default Reports;

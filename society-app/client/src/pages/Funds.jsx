@@ -452,8 +452,5 @@ const Funds = () => {
     </div>
   );
 };
-    </div>
-  );
-};
 
 export default Funds;

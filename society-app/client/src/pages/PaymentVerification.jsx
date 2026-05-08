@@ -241,8 +241,5 @@ const PaymentVerification = () => {
     </div>
   );
 };
-    </div>
-  );
-};
 
 export default PaymentVerification;

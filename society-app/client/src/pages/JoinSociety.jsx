@@ -230,7 +230,5 @@ const JoinSociety = () => {
     </div>
   );
 };
-  );
-};
 
 export default JoinSociety;
