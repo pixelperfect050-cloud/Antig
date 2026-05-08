@@ -1,78 +1,112 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { useAuth } from '../context/AuthContext';
+import api from '../utils/api';
 
 const SetupSociety = () => {
-  const [formData, setFormData] = useState({
-    name: '', address: '', maintenanceAmount: 3000, billingDay: 1
-  });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const { user, loadUser } = useAuth();
   const navigate = useNavigate();
+  const [formData, setFormData] = useState({
+    name: '', address: '', city: '', state: '', pincode: '',
+    maintenanceAmount: 3000, lateFeePerDay: 50, lateFeeAfterDays: 15, billingDay: 1
+  });
+  const [saving, setSaving] = useState(false);
 
-  const handleSetup = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError('');
+    setSaving(true);
     try {
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/society/setup`, formData);
+      await api.post('/api/society', formData);
+      await loadUser();
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to setup society');
+      alert(err.message);
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
-  return (
-    <div className="auth-page bg-slate-50 min-h-screen flex items-center justify-center p-6">
-      <div className="w-full max-w-[540px]">
-        <div className="text-center mb-10">
-          <div className="w-16 h-16 bg-white rounded-3xl shadow-premium mx-auto flex items-center justify-center text-3xl mb-4 border border-slate-100">🏗️</div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tighter">Society Setup</h1>
-          <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mt-1">Admin Configuration</p>
-        </div>
+  if (user?.societyId) {
+    navigate('/dashboard');
+    return null;
+  }
 
-        <div className="card p-10 bg-white shadow-premium border-none rounded-[2.5rem]">
-          <div className="mb-8 p-6 bg-indigo-50 rounded-3xl border border-indigo-100">
-            <h2 className="text-sm font-black text-indigo-600 uppercase tracking-widest mb-1">Getting Started</h2>
-            <p className="text-xs text-indigo-400 font-medium leading-relaxed">Register your society to begin managing residents, billing, and expenses efficiently.</p>
+  return (
+    <div className="auth-page">
+      <div className="auth-bg">
+        <div className="auth-bg-shape shape-1"></div>
+        <div className="auth-bg-shape shape-2"></div>
+        <div className="auth-bg-shape shape-3"></div>
+      </div>
+
+      <div className="auth-container" style={{ maxWidth: '600px' }}>
+        <div className="auth-card">
+          <div className="auth-header">
+            <div className="auth-logo">🏙️</div>
+            <h1 className="auth-title">Setup Your Society</h1>
+            <p className="auth-subtitle">Lay the foundation for your digital community</p>
           </div>
 
-          <form onSubmit={handleSetup} className="space-y-6">
-            {error && (
-              <div className="p-4 bg-rose-50 text-rose-500 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-rose-100">
-                {error}
-              </div>
-            )}
-
-            <div className="form-group mb-0">
-              <label className="form-label">Society Registered Name</label>
-              <input type="text" className="form-input" placeholder="e.g. Green Valley Apartments" required
-                value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
+          <form onSubmit={handleSubmit} className="auth-form">
+            <div className="mb-4">
+              <h2 className="text-xl font-black text-slate-900">Society Identity</h2>
+              <p className="text-xs text-secondary font-medium">Basic information that residents will see</p>
             </div>
 
-            <div className="form-group mb-0">
-              <label className="form-label">Official Address</label>
-              <textarea className="form-input" rows={2} placeholder="Full postal address" required
-                value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} />
+            <div className="grid gap-6">
+              <div className="form-group">
+                <label className="text-[10px] font-black uppercase tracking-widest text-secondary mb-1">Society Name</label>
+                <input type="text" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="e.g. Sunrise Heights" required
+                  className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-100 focus:border-primary focus:bg-white outline-none transition-all text-sm font-medium" />
+              </div>
+
+              <div className="form-group">
+                <label className="text-[10px] font-black uppercase tracking-widest text-secondary mb-1">Primary Address</label>
+                <input type="text" value={formData.address} onChange={e => setFormData({ ...formData, address: e.target.value })}
+                  placeholder="Street, Landmark" required
+                  className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-100 focus:border-primary focus:bg-white outline-none transition-all text-sm font-medium" />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="form-group">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-secondary mb-1">City</label>
+                  <input type="text" value={formData.city} onChange={e => setFormData({ ...formData, city: e.target.value })} placeholder="City"
+                    className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-100 focus:border-primary focus:bg-white outline-none transition-all text-sm font-medium" />
+                </div>
+                <div className="form-group">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-secondary mb-1">State</label>
+                  <input type="text" value={formData.state} onChange={e => setFormData({ ...formData, state: e.target.value })} placeholder="State"
+                    className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-100 focus:border-primary focus:bg-white outline-none transition-all text-sm font-medium" />
+                </div>
+                <div className="form-group">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-secondary mb-1">Pincode</label>
+                  <input type="text" value={formData.pincode} onChange={e => setFormData({ ...formData, pincode: e.target.value })} placeholder="000000"
+                    className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-100 focus:border-primary focus:bg-white outline-none transition-all text-sm font-medium" />
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-slate-100">
+                <h2 className="text-xl font-black text-slate-900 mb-1">Financial Parameters</h2>
+                <p className="text-xs text-secondary font-medium mb-6">Default billing configuration for all flats</p>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="form-group">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-secondary mb-1">Maintenance (₹)</label>
+                    <input type="number" value={formData.maintenanceAmount} onChange={e => setFormData({ ...formData, maintenanceAmount: parseInt(e.target.value) })}
+                      className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-100 focus:border-primary focus:bg-white outline-none transition-all text-sm font-medium" />
+                  </div>
+                  <div className="form-group">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-secondary mb-1">Billing Day</label>
+                    <input type="number" min="1" max="28" value={formData.billingDay} onChange={e => setFormData({ ...formData, billingDay: parseInt(e.target.value) })}
+                      className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-100 focus:border-primary focus:bg-white outline-none transition-all text-sm font-medium" />
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="form-group mb-0">
-                <label className="form-label">Base Maintenance (₹)</label>
-                <input type="number" className="form-input" placeholder="3000" required
-                  value={formData.maintenanceAmount} onChange={(e) => setFormData({ ...formData, maintenanceAmount: Number(e.target.value) })} />
-              </div>
-              <div className="form-group mb-0">
-                <label className="form-label">Billing Day</label>
-                <input type="number" className="form-input" min="1" max="28" required
-                  value={formData.billingDay} onChange={(e) => setFormData({ ...formData, billingDay: Number(e.target.value) })} />
-              </div>
-            </div>
-
-            <button type="submit" disabled={loading} className="btn btn--primary btn--full py-5 rounded-2xl shadow-xl mt-4">
-              {loading ? 'Registering...' : 'Complete Registration 🚀'}
+            <button type="submit" className="btn btn--primary w-full py-4 rounded-2xl shadow-lg shadow-primary/20 mt-8" disabled={saving}>
+              {saving ? <span className="btn-spinner"></span> : '🚀 Initialize Society'}
             </button>
           </form>
         </div>

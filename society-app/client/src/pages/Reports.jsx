@@ -1,141 +1,232 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
+import api from '../utils/api';
+
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
 const Reports = () => {
+  const { user } = useAuth();
+  const [reportType, setReportType] = useState('monthly');
+  const [monthFilter, setMonthFilter] = useState(new Date().getMonth() + 1);
+  const [yearFilter, setYearFilter] = useState(new Date().getFullYear());
   const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
-  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-
-  const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-  const YEARS = [2024, 2025, 2026];
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     fetchReport();
-  }, [selectedMonth, selectedYear]);
+  }, [reportType, monthFilter, yearFilter]);
 
   const fetchReport = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/society/report`, {
-        params: { month: selectedMonth, year: selectedYear }
-      });
-      setData(res.data);
+      const sid = user?.societyId?._id || user?.societyId;
+      if (!sid) return;
+
+      if (reportType === 'monthly') {
+        const result = await api.get(`/api/reports/monthly/${sid}?month=${monthFilter}&year=${yearFilter}`);
+        setData(result);
+      } else {
+        const result = await api.get(`/api/reports/flat-wise/${sid}`);
+        setData(result);
+      }
     } catch (err) {
-      console.error('Fetch report error:', err);
+      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  const formatCurrency = (amt) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency', currency: 'INR', maximumFractionDigits: 0
-    }).format(amt || 0);
+  const formatCurrency = (amt) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amt || 0);
+
+  const exportCSV = () => {
+    let csv = '';
+    if (reportType === 'monthly' && data) {
+      csv = 'Flat,Owner,Amount,Paid,Status,Method,Date\n';
+      data.payments?.forEach(p => {
+        csv += `${p.flatId?.number || ''},${p.flatId?.ownerName || ''},${p.amount},${p.paidAmount},${p.status},${p.paymentMethod || ''},${p.paidDate ? new Date(p.paidDate).toLocaleDateString() : ''}\n`;
+      });
+    } else if (data) {
+      csv = 'Flat,Block,Owner,Phone,Total Paid,Total Due,Status\n';
+      data.forEach(r => {
+        csv += `${r.flatNumber},${r.blockName},${r.ownerName},${r.phone},${r.totalPaid},${r.totalDue},${r.currentStatus}\n`;
+      });
+    }
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${reportType}_report_${monthFilter}_${yearFilter}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
-  if (loading && !data) return <div className="page-loader"><div className="spinner"></div></div>;
-
   return (
-    <div className="animate-up">
-      <header className="mb-8">
-        <p className="page-subtitle uppercase tracking-widest mb-1">Financials</p>
-        <h1 className="page-title">Accounts Report</h1>
-        <p className="text-secondary font-medium">Monthly statement of income and expenses</p>
+    <div className="page">
+      <header className="page-header">
+        <div className="page-title-group">
+          <h1 className="page-title">Reports</h1>
+          <p className="page-subtitle">Insights & financial statements</p>
+        </div>
+        <div className="page-actions mt-3 sm:mt-0">
+          <button className="btn btn--outline btn--sm w-full sm:w-auto" onClick={exportCSV}>
+            📥 Export CSV
+          </button>
+        </div>
       </header>
 
-      {/* Modern Filter Selection */}
-      <div className="card mb-8">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="form-group mb-0">
-            <label className="form-label">Report Month</label>
-            <select className="form-input" value={selectedMonth} onChange={e => setSelectedMonth(Number(e.target.value))}>
-              {MONTHS.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
+      {/* Responsive Report Tabs */}
+      <div className="card mb-6">
+        <div className="p-2 flex gap-2">
+          <button 
+            className={`flex-1 py-3 px-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${reportType === 'monthly' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-slate-50 text-secondary hover:bg-slate-100'}`}
+            onClick={() => setReportType('monthly')}
+          >
+            📅 Monthly
+          </button>
+          <button 
+            className={`flex-1 py-3 px-4 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${reportType === 'flatwise' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-slate-50 text-secondary hover:bg-slate-100'}`}
+            onClick={() => setReportType('flatwise')}
+          >
+            🏠 Flat-wise
+          </button>
+        </div>
+      </div>
+
+      {reportType === 'monthly' && (
+        <div className="card mb-6">
+          <div className="p-4 flex gap-4">
+            <select value={monthFilter} onChange={e => setMonthFilter(parseInt(e.target.value))} className="flex-1 min-h-[48px] rounded-xl border-slate-200 bg-slate-50 font-bold px-4">
+              {MONTHS.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
+            </select>
+            <select value={yearFilter} onChange={e => setYearFilter(parseInt(e.target.value))} className="w-32 min-h-[48px] rounded-xl border-slate-200 bg-slate-50 font-bold px-4">
+              {[2024, 2025, 2026, 2027].map(y => <option key={y} value={y}>{y}</option>)}
             </select>
           </div>
-          <div className="form-group mb-0">
-            <label className="form-label">Report Year</label>
-            <select className="form-input" value={selectedYear} onChange={e => setSelectedYear(Number(e.target.value))}>
-              {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
-            </select>
-          </div>
         </div>
-      </div>
+      )}
 
-      {/* Main Stats Cards */}
-      <div className="flex flex-col gap-6 mb-8">
-        <div className="card bg-slate-900 text-white border-none p-8 overflow-hidden relative">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 blur-3xl rounded-full -mr-32 -mt-32"></div>
-          <div className="relative z-10">
-            <div className="flex justify-between items-center mb-6">
-              <span className="text-[10px] font-black text-indigo-300 uppercase tracking-widest">Net Surplus / Deficit</span>
-              <span className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center text-xl">📊</span>
-            </div>
-            <h2 className={`text-4xl font-black ${data?.netBalance >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-              {formatCurrency(data?.netBalance)}
-            </h2>
-            <p className="text-xs font-bold text-slate-400 mt-2">Statement for {MONTHS[selectedMonth-1]} {selectedYear}</p>
-          </div>
-        </div>
-
-        <div className="grid-2">
-           <div className="card p-6 border-l-4 border-l-emerald-500">
-             <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center text-xl mb-4">📥</div>
-             <p className="text-[10px] font-black text-secondary uppercase mb-1">Total Income</p>
-             <h3 className="text-xl font-black text-emerald-600">{formatCurrency(data?.totalIncome)}</h3>
-           </div>
-           <div className="card p-6 border-l-4 border-l-rose-500">
-             <div className="w-10 h-10 bg-rose-50 rounded-xl flex items-center justify-center text-xl mb-4">📤</div>
-             <p className="text-[10px] font-black text-secondary uppercase mb-1">Total Expenses</p>
-             <h3 className="text-xl font-black text-rose-500">{formatCurrency(data?.totalExpenses)}</h3>
-           </div>
-        </div>
-      </div>
-
-      {/* Detailed Breakdown */}
-      <div className="section-header">
-        <h2 className="section-title">Expense Breakdown</h2>
-        <span className="text-xs font-black text-secondary">{data?.expensesByCategory?.length || 0} Categories</span>
-      </div>
-
-      <div className="space-y-4">
-        {data?.expensesByCategory?.map((cat, i) => (
-          <div key={i} className="card p-5 group hover:border-indigo-200 transition-colors">
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center font-black text-indigo-500 group-hover:bg-indigo-500 group-hover:text-white transition-all">
-                  {cat._id.charAt(0)}
-                </div>
-                <div>
-                  <h3 className="font-black text-slate-900">{cat._id}</h3>
-                  <div className="w-32 h-1.5 bg-slate-100 rounded-full mt-2 overflow-hidden">
-                    <div className="h-full bg-indigo-500" style={{ width: `${(cat.total / data.totalExpenses) * 100}%` }}></div>
-                  </div>
-                </div>
+      {loading ? (
+        <div className="page-loader"><div className="spinner"></div></div>
+      ) : reportType === 'monthly' && data ? (
+        <>
+          {/* Summary Stats Grid */}
+          <div className="stats-grid mb-6">
+            <div className="stats-card stats-card--success">
+              <div className="stats-card__icon">💰</div>
+              <div className="stats-card__content">
+                <span className="stats-card__label">Collected</span>
+                <span className="stats-card__value text-lg">{formatCurrency(data.summary?.totalCollected)}</span>
               </div>
-              <div className="text-right">
-                <p className="font-black text-slate-900">{formatCurrency(cat.total)}</p>
-                <p className="text-[9px] font-black text-secondary uppercase">
-                  {Math.round((cat.total / data.totalExpenses) * 100)}% of total
-                </p>
+            </div>
+            <div className="stats-card stats-card--danger">
+              <div className="stats-card__icon">⏳</div>
+              <div className="stats-card__content">
+                <span className="stats-card__label">Pending</span>
+                <span className="stats-card__value text-lg">{formatCurrency(data.summary?.totalDue)}</span>
+              </div>
+            </div>
+            <div className="stats-card stats-card--warning">
+              <div className="stats-card__icon">📉</div>
+              <div className="stats-card__content">
+                <span className="stats-card__label">Expenses</span>
+                <span className="stats-card__value text-lg">{formatCurrency(data.summary?.totalExpenses)}</span>
+              </div>
+            </div>
+            <div className="stats-card stats-card--primary">
+              <div className="stats-card__icon">🏦</div>
+              <div className="stats-card__content">
+                <span className="stats-card__label">Net Balance</span>
+                <span className="stats-card__value text-lg">{formatCurrency(data.summary?.netBalance)}</span>
               </div>
             </div>
           </div>
-        ))}
-        
-        {(!data?.expensesByCategory || data.expensesByCategory.length === 0) && (
-          <div className="card text-center py-12">
-            <p className="text-secondary font-bold italic">No expenses recorded for this period.</p>
-          </div>
-        )}
-      </div>
 
-      {/* Quick Action Button */}
-      <div className="mt-10">
-        <button className="btn btn--primary btn--full py-5 rounded-2xl shadow-2xl">
-          📥 DOWNLOAD PDF STATEMENT
-        </button>
-      </div>
+          <div className="card">
+            <div className="card-header">
+              <h3 className="card-title">Payment Logs</h3>
+              <span className="card-badge">{data.payments?.length || 0} Records</span>
+            </div>
+            <div className="table-wrapper">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Flat</th>
+                    <th>Amount</th>
+                    <th>Paid</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.payments?.map((p, i) => (
+                    <tr key={i}>
+                      <td className="font-bold">{p.flatId?.number || '-'}</td>
+                      <td className="font-black">{formatCurrency(p.amount)}</td>
+                      <td className="text-emerald-600 font-bold">{formatCurrency(p.paidAmount)}</td>
+                      <td><span className={`status-badge status-badge--${p.status}`}>{p.status}</span></td>
+                      <td>
+                        <span className="text-[10px] font-bold text-secondary uppercase truncate max-w-[80px] inline-block">
+                          {p.paymentMethod || '-'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                  {(!data.payments || data.payments.length === 0) && (
+                    <tr><td colSpan={5} className="text-center p-12 text-secondary">No records for this period.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      ) : Array.isArray(data) ? (
+        <div className="card">
+          <div className="card-header">
+            <h3 className="card-title">Unit-wise Performance</h3>
+            <span className="card-badge">{data.length} Units</span>
+          </div>
+          <div className="table-wrapper">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Unit</th>
+                  <th>Owner</th>
+                  <th>Paid</th>
+                  <th>Due</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.map((r, i) => (
+                  <tr key={i}>
+                    <td>
+                      <div className="flex flex-col">
+                        <span className="font-black text-primary">{r.flatNumber}</span>
+                        <span className="text-[10px] font-bold text-secondary uppercase">{r.blockName}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="flex flex-col truncate max-w-[120px]">
+                        <span className="font-bold text-sm truncate">{r.ownerName}</span>
+                        <span className="text-[10px] text-secondary">{r.phone || '-'}</span>
+                      </div>
+                    </td>
+                    <td className="text-emerald-600 font-bold">{formatCurrency(r.totalPaid)}</td>
+                    <td className="text-rose-500 font-bold">{formatCurrency(r.totalDue)}</td>
+                    <td><span className={`status-badge status-badge--${r.currentStatus}`}>{r.currentStatus}</span></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : (
+        <div className="empty-state p-20">
+          <div className="text-4xl mb-4">📊</div>
+          <p className="text-secondary font-bold">Select parameters to generate report</p>
+        </div>
+      )}
     </div>
   );
 };

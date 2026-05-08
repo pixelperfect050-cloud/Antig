@@ -1,18 +1,32 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import Modal from '../components/Modal';
+import api from '../utils/api';
+
+const CATEGORIES = [
+  { value: 'electricity', label: 'Electricity', icon: '⚡' },
+  { value: 'lift', label: 'Lift', icon: '🛗' },
+  { value: 'security', label: 'Security', icon: '🛡️' },
+  { value: 'cleaning', label: 'Cleaning', icon: '🧹' },
+  { value: 'plumbing', label: 'Plumbing', icon: '🔧' },
+  { value: 'gardening', label: 'Gardening', icon: '🌿' },
+  { value: 'repairs', label: 'Repairs', icon: '🔨' },
+  { value: 'water', label: 'Water', icon: '💧' },
+  { value: 'misc', label: 'Miscellaneous', icon: '📦' }
+];
 
 const Expenses = () => {
+  const { user } = useAuth();
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [filter, setFilter] = useState('All');
-  const [saving, setSaving] = useState(false);
+  const [editingExpense, setEditingExpense] = useState(null);
   const [formData, setFormData] = useState({
-    title: '', amount: '', category: 'Maintenance', date: new Date().toISOString().split('T')[0], description: ''
+    category: 'electricity', description: '', amount: '', date: new Date().toISOString().split('T')[0], vendor: ''
   });
-
-  const categories = ['All', 'Electricity', 'Water', 'Security', 'Cleaning', 'Maintenance', 'Plumbing', 'Gardening', 'Other'];
+  const [saving, setSaving] = useState(false);
+  const [catFilter, setCatFilter] = useState('all');
+  const isAdmin = user?.role === 'admin';
 
   useEffect(() => {
     fetchExpenses();
@@ -20,10 +34,12 @@ const Expenses = () => {
 
   const fetchExpenses = async () => {
     try {
-      const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/expenses`);
-      setExpenses(res.data);
+      const sid = user?.societyId?._id || user?.societyId;
+      if (!sid) return;
+      const data = await api.get(`/api/expenses/society/${sid}`);
+      setExpenses(data);
     } catch (err) {
-      console.error('Fetch expenses error:', err);
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -33,152 +49,191 @@ const Expenses = () => {
     e.preventDefault();
     setSaving(true);
     try {
-      await axios.post(`${import.meta.env.VITE_API_URL}/api/expenses`, formData);
+      const sid = user?.societyId?._id || user?.societyId;
+      if (editingExpense) {
+        await api.put(`/api/expenses/${editingExpense._id}`, formData);
+      } else {
+        await api.post('/api/expenses', { ...formData, societyId: sid });
+      }
       setShowModal(false);
+      setEditingExpense(null);
+      setFormData({ category: 'electricity', description: '', amount: '', date: new Date().toISOString().split('T')[0], vendor: '' });
       fetchExpenses();
-      setFormData({ title: '', amount: '', category: 'Maintenance', date: new Date().toISOString().split('T')[0], description: '' });
     } catch (err) {
-      alert('Failed to save expense');
+      alert(err.message);
     } finally {
       setSaving(false);
     }
   };
 
-  const formatCurrency = (amt) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency', currency: 'INR', maximumFractionDigits: 0
-    }).format(amt || 0);
+  const handleEdit = (expense) => {
+    setEditingExpense(expense);
+    setFormData({
+      category: expense.category,
+      description: expense.description,
+      amount: expense.amount,
+      date: new Date(expense.date).toISOString().split('T')[0],
+      vendor: expense.vendor || ''
+    });
+    setShowModal(true);
   };
 
-  const filteredExpenses = filter === 'All' ? expenses : expenses.filter(e => e.category === filter);
-  const totalAmount = filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
+  const handleDelete = async (id) => {
+    if (!confirm('Are you sure you want to delete this expense?')) return;
+    try {
+      await api.delete(`/api/expenses/${id}`);
+      fetchExpenses();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const formatCurrency = (amt) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amt || 0);
+
+  const filtered = catFilter === 'all' ? expenses : expenses.filter(e => e.category === catFilter);
+  const totalAmount = filtered.reduce((s, e) => s + e.amount, 0);
+
+  const getCategoryInfo = (cat) => CATEGORIES.find(c => c.value === cat) || { icon: '📦', label: cat };
 
   if (loading) return <div className="page-loader"><div className="spinner"></div></div>;
 
   return (
-    <div className="animate-up">
-      <header className="mb-8">
-        <p className="page-subtitle uppercase tracking-widest mb-1">Accounts</p>
-        <h1 className="page-title">Expenses</h1>
-        <p className="text-secondary font-medium">Track and manage society spending</p>
+    <div className="page">
+      <header className="page-header">
+        <div className="page-title-group">
+          <h1 className="page-title">Expenses</h1>
+          <p className="page-subtitle">Track & manage society spending</p>
+        </div>
+        {isAdmin && (
+          <button className="btn btn--primary btn--sm mt-2 sm:mt-0" onClick={() => { setEditingExpense(null); setShowModal(true); }}>
+            ➕ Add Expense
+          </button>
+        )}
       </header>
 
-      <button onClick={() => setShowModal(true)} className="btn btn--primary btn--full shadow-xl mb-8">
-        ➕ Add New Expense
-      </button>
-
-      {/* Modern Filter Tabs */}
-      <div className="card mb-8">
-        <p className="text-[10px] font-black text-secondary uppercase tracking-widest mb-4">Filter by Category</p>
-        <div className="filter-tabs">
-          {categories.map(c => (
-            <button 
-              key={c} 
-              className={`filter-tab ${filter === c ? 'active' : ''}`}
-              onClick={() => setFilter(c)}
-            >
-              {c}
+      {/* Responsive Category Filter */}
+      <div className="card mb-6 overflow-hidden">
+        <div className="flex overflow-x-auto no-scrollbar p-2 gap-2 bg-slate-50/50">
+          <button 
+            className={`whitespace-now-nowrap px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all shrink-0 ${catFilter === 'all' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-white text-secondary border border-slate-200'}`}
+            onClick={() => setCatFilter('all')}
+          >
+            All
+          </button>
+          {CATEGORIES.map(cat => (
+            <button key={cat.value} 
+              className={`whitespace-now-nowrap px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all shrink-0 ${catFilter === cat.value ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-white text-secondary border border-slate-200'}`}
+              onClick={() => setCatFilter(cat.value)}>
+              {cat.icon} {cat.label}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Summary Card */}
-      <div className="card bg-slate-900 text-white border-none shadow-2xl mb-8 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/20 blur-3xl rounded-full -mr-16 -mt-16"></div>
-        <div className="relative z-10 flex items-center justify-between">
-          <div>
-            <p className="text-[10px] font-black text-indigo-300 uppercase tracking-widest mb-1">Total {filter} Expenses</p>
-            <h2 className="text-3xl font-black text-white">{formatCurrency(totalAmount)}</h2>
-            <p className="text-[10px] font-bold text-slate-400 mt-1">{filteredExpenses.length} Transactions</p>
+      {/* Summary Stat Card */}
+      <div className="stats-card stats-card--primary mb-6">
+        <div className="stats-card__icon">📊</div>
+        <div className="stats-card__content">
+          <span className="stats-card__label">Total {catFilter === 'all' ? '' : catFilter} Expenses</span>
+          <div className="flex items-baseline gap-2">
+            <span className="stats-card__value text-2xl">{formatCurrency(totalAmount)}</span>
+            <span className="text-[10px] font-bold text-secondary uppercase">{filtered.length} entries</span>
           </div>
-          <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center text-3xl">📉</div>
         </div>
       </div>
 
-      {/* Expense List */}
-      <div className="section-header">
-        <h2 className="section-title">Expense History</h2>
-      </div>
+      {/* Premium Expense List */}
+      <div className="flex flex-col gap-3">
+        {filtered.map(expense => {
+          const catInfo = getCategoryInfo(expense.category);
+          return (
+            <div key={expense._id} className="card group hover:border-primary transition-all">
+              <div className="p-4 flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-slate-50 text-2xl flex items-center justify-center shrink-0 group-hover:bg-primary-light transition-colors">
+                  {catInfo.icon}
+                </div>
+                
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-start mb-1">
+                    <h3 className="text-sm font-black text-slate-900 truncate pr-2">
+                      {expense.description}
+                    </h3>
+                    <span className="text-sm font-black text-primary shrink-0">
+                      {formatCurrency(expense.amount)}
+                    </span>
+                  </div>
+                  
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-bold text-secondary uppercase tracking-widest">
+                    <span className="text-primary">{catInfo.label}</span>
+                    <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                    <span>{new Date(expense.date).toLocaleDateString('en-IN')}</span>
+                    {expense.vendor && (
+                      <>
+                        <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                        <span className="truncate max-w-[100px]">{expense.vendor}</span>
+                      </>
+                    )}
+                  </div>
+                </div>
 
-      <div className="space-y-4">
-        {filteredExpenses.map(exp => (
-          <div key={exp._id} className="card p-5">
-            <div className="flex justify-between items-start mb-4">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl">
-                  {exp.category === 'Electricity' ? '⚡' : exp.category === 'Water' ? '💧' : '📋'}
-                </div>
-                <div>
-                  <h3 className="font-black text-slate-900 truncate max-w-[150px]">{exp.title}</h3>
-                  <p className="text-[10px] font-bold text-secondary uppercase tracking-widest">{exp.category}</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="font-black text-rose-500 text-lg">{formatCurrency(exp.amount)}</p>
-                <p className="text-[10px] font-bold text-secondary">{new Date(exp.date).toLocaleDateString()}</p>
+                {isAdmin && (
+                  <div className="flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-xs hover:bg-primary hover:text-white transition-colors" onClick={() => handleEdit(expense)}>✏️</button>
+                    <button className="w-8 h-8 rounded-lg bg-rose-50 text-rose-500 flex items-center justify-center text-xs hover:bg-rose-500 hover:text-white transition-colors" onClick={() => handleDelete(expense._id)}>🗑️</button>
+                  </div>
+                )}
               </div>
             </div>
-            {exp.description && (
-              <p className="text-xs text-slate-500 bg-slate-50 p-3 rounded-xl border border-slate-100 italic">
-                {exp.description}
-              </p>
-            )}
-            <div className="mt-4 flex gap-3">
-              <button className="btn btn--secondary flex-1 py-2 text-xs">✏️ Edit</button>
-              <button className="btn bg-rose-50 text-rose-500 border border-rose-100 flex-1 py-2 text-xs">🗑️ Delete</button>
-            </div>
-          </div>
-        ))}
-
-        {filteredExpenses.length === 0 && (
-          <div className="card text-center py-16">
-            <div className="text-5xl mb-4">📂</div>
-            <p className="font-black text-slate-900">No expenses recorded</p>
-            <p className="text-xs text-secondary font-bold">Start tracking by adding your first expense.</p>
+          );
+        })}
+        
+        {filtered.length === 0 && (
+          <div className="empty-state p-20">
+            <div className="text-6xl mb-6">💸</div>
+            <h2 className="text-xl font-black mb-2">No Expenses</h2>
+            <p className="text-secondary">No recorded expenses found for this category.</p>
           </div>
         )}
       </div>
 
-      {/* Modern Expense Modal */}
-      <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="New Expense">
-        <form onSubmit={handleSubmit} className="p-4 space-y-6">
-          <div className="form-group">
-            <label className="form-label">Expense Title</label>
-            <input type="text" className="form-input" placeholder="e.g. Electricity Bill Mar" required
-              value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} />
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4">
+      {/* Add/Edit Modal - Standardized */}
+      <Modal isOpen={showModal} onClose={() => { setShowModal(false); setEditingExpense(null); }}
+        title={editingExpense ? 'Edit Expense' : 'Add Expense'}>
+        <form onSubmit={handleSubmit} className="modal-form p-4">
+          <div className="grid gap-4">
             <div className="form-group">
-              <label className="form-label">Amount</label>
-              <input type="number" className="form-input" placeholder="0.00" required
-                value={formData.amount} onChange={e => setFormData({ ...formData, amount: Number(e.target.value) })} />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Category</label>
-              <select className="form-input" value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })}>
-                {categories.filter(c => c !== 'All').map(c => <option key={c} value={c}>{c}</option>)}
+              <label>Category</label>
+              <select value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })}>
+                {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.icon} {c.label}</option>)}
               </select>
             </div>
+            
+            <div className="form-group">
+              <label>Description</label>
+              <input type="text" value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} placeholder="e.g., Electricity Bill" required />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="form-group">
+                <label>Amount (₹)</label>
+                <input type="number" min="1" value={formData.amount} onChange={e => setFormData({ ...formData, amount: e.target.value })} required />
+              </div>
+              <div className="form-group">
+                <label>Date</label>
+                <input type="date" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} required />
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label>Vendor (Optional)</label>
+              <input type="text" value={formData.vendor} onChange={e => setFormData({ ...formData, vendor: e.target.value })} placeholder="e.g., BESCOM" />
+            </div>
           </div>
 
-          <div className="form-group">
-            <label className="form-label">Date</label>
-            <input type="date" className="form-input" required
-              value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Description (Optional)</label>
-            <textarea className="form-input" rows={3} placeholder="Additional details..."
-              value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
-          </div>
-
-          <div className="flex gap-4 pt-4">
-            <button type="button" onClick={() => setShowModal(false)} className="btn btn--secondary flex-1">Cancel</button>
-            <button type="submit" disabled={saving} className="btn btn--primary flex-1">
-              {saving ? 'Saving...' : '💾 Save Expense'}
+          <div className="modal-actions mt-8">
+            <button type="button" className="btn btn--secondary flex-1" onClick={() => setShowModal(false)}>Cancel</button>
+            <button type="submit" className="btn btn--primary flex-1" disabled={saving}>
+              {saving ? <span className="btn-spinner"></span> : (editingExpense ? 'Update' : 'Add Expense')}
             </button>
           </div>
         </form>

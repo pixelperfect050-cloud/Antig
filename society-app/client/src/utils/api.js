@@ -1,48 +1,58 @@
-import axios from 'axios';
-
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
-// Create axios instance
-const api = axios.create({
-  baseURL: API_BASE
-});
-
-// Add request interceptor for auth token
-api.interceptors.request.use((config) => {
+const getHeaders = () => {
   const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-}, (error) => {
-  return Promise.reject(error);
-});
+  return {
+    'Content-Type': 'application/json',
+    ...(token && { Authorization: `Bearer ${token}` })
+  };
+};
 
-// Add response interceptor for error handling
-api.interceptors.response.use((response) => {
-  return response.data;
-}, (error) => {
-  const message = error.response?.data?.message || 'Something went wrong';
-  return Promise.reject(new Error(message));
-});
+const handleResponse = async (res) => {
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Something went wrong');
+  return data;
+};
 
-// Custom download method using axios
-api.download = async (url, filename) => {
-  try {
-    const response = await axios.get(`${API_BASE}${url}`, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`
-      },
-      responseType: 'blob'
+const api = {
+  get: async (url) => {
+    const res = await fetch(`${API_BASE}${url}`, { headers: getHeaders() });
+    return handleResponse(res);
+  },
+  post: async (url, body) => {
+    const res = await fetch(`${API_BASE}${url}`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(body)
     });
-    
-    const blob = new Blob([response.data]);
+    return handleResponse(res);
+  },
+  put: async (url, body) => {
+    const res = await fetch(`${API_BASE}${url}`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify(body)
+    });
+    return handleResponse(res);
+  },
+  delete: async (url) => {
+    const res = await fetch(`${API_BASE}${url}`, {
+      method: 'DELETE',
+      headers: getHeaders()
+    });
+    return handleResponse(res);
+  },
+  download: async (url, filename) => {
+    const res = await fetch(`${API_BASE}${url}`, { headers: getHeaders() });
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.message || 'Download failed');
+    }
+    const blob = await res.blob();
     const link = document.createElement('a');
     link.href = window.URL.createObjectURL(blob);
     link.download = filename;
     link.click();
-  } catch (error) {
-    throw new Error('Download failed');
   }
 };
 

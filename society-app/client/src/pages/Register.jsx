@@ -3,73 +3,108 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const Register = () => {
-  const [formData, setFormData] = useState({ name: '', email: '', password: '', phone: '' });
+  const [formData, setFormData] = useState({ name: '', email: '', phone: '', password: '', confirmPassword: '' });
   const [loading, setLoading] = useState(false);
+  const [formError, setFormError] = useState('');
   const { register, error } = useAuth();
   const navigate = useNavigate();
 
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setFormError('');
+
+    if (formData.password !== formData.confirmPassword) {
+      setFormError('Passwords do not match');
+      return;
+    }
+    if (formData.password.length < 6) {
+      setFormError('Password must be at least 6 characters');
+      return;
+    }
+
     setLoading(true);
     try {
       await register(formData);
-      navigate('/join');
+      navigate('/setup');
     } catch (err) {
-      // error is handled in context
+      // error set in context
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="auth-page bg-slate-50 min-h-screen flex items-center justify-center p-6">
-      <div className="w-full max-w-[480px]">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-black text-slate-900 tracking-tighter">Create Account</h1>
-          <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mt-1">Start your journey</p>
-        </div>
+    <div className="auth-page">
+      <div className="auth-bg">
+        <div className="auth-bg-shape shape-1"></div>
+        <div className="auth-bg-shape shape-2"></div>
+        <div className="auth-bg-shape shape-3"></div>
+      </div>
 
-        <div className="card p-10 bg-white shadow-premium border-none rounded-[2.5rem]">
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {error && (
-              <div className="p-4 bg-rose-50 text-rose-500 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-rose-100">
-                {error}
+      <div className="auth-container">
+        <div className="auth-card">
+          <div className="auth-header">
+            <div className="auth-logo">🏘️</div>
+            <h1 className="auth-title">SocietySync</h1>
+            <p className="auth-subtitle">Join Your Digital Community</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="auth-form">
+            <div className="mb-2">
+              <h2 className="text-xl font-black text-slate-900">Create Account</h2>
+              <p className="text-xs text-secondary font-medium">Step into a smarter way of living</p>
+            </div>
+
+            {(error || formError) && (
+              <div className="p-3 bg-rose-50 border border-rose-100 text-rose-500 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                <span>⚠️</span> {formError || error}
               </div>
             )}
 
-            <div className="form-group mb-0">
-              <label className="form-label">Full Name</label>
-              <input type="text" className="form-input" placeholder="John Doe" required
-                value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
+            <div className="grid gap-4">
+              <div className="form-group">
+                <label className="text-[10px] font-black uppercase tracking-widest text-secondary mb-1">Full Name</label>
+                <input type="text" name="name" value={formData.name} onChange={handleChange} placeholder="e.g. John Doe" required
+                  className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-100 focus:border-primary focus:bg-white outline-none transition-all text-sm font-medium" />
+              </div>
+
+              <div className="form-group">
+                <label className="text-[10px] font-black uppercase tracking-widest text-secondary mb-1">Email Address</label>
+                <input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="name@example.com" required
+                  className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-100 focus:border-primary focus:bg-white outline-none transition-all text-sm font-medium" />
+              </div>
+
+              <div className="form-group">
+                <label className="text-[10px] font-black uppercase tracking-widest text-secondary mb-1">Phone Number</label>
+                <input type="tel" name="phone" value={formData.phone} onChange={handleChange} placeholder="+91 00000 00000" required
+                  className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-100 focus:border-primary focus:bg-white outline-none transition-all text-sm font-medium" />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="form-group">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-secondary mb-1">Password</label>
+                  <input type="password" name="password" value={formData.password} onChange={handleChange} placeholder="Min 6 chars" required
+                    className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-100 focus:border-primary focus:bg-white outline-none transition-all text-sm font-medium" />
+                </div>
+                <div className="form-group">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-secondary mb-1">Confirm</label>
+                  <input type="password" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} placeholder="Repeat" required
+                    className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-100 focus:border-primary focus:bg-white outline-none transition-all text-sm font-medium" />
+                </div>
+              </div>
             </div>
 
-            <div className="form-group mb-0">
-              <label className="form-label">Email Address</label>
-              <input type="email" className="form-input" placeholder="name@example.com" required
-                value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
-            </div>
-
-            <div className="form-group mb-0">
-              <label className="form-label">Phone Number</label>
-              <input type="tel" className="form-input" placeholder="9876543210" required
-                value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
-            </div>
-
-            <div className="form-group mb-0">
-              <label className="form-label">Password</label>
-              <input type="password" className="form-input" placeholder="••••••••" required
-                value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} />
-            </div>
-
-            <button type="submit" disabled={loading} className="btn btn--primary btn--full py-5 rounded-2xl shadow-xl mt-4">
-              {loading ? 'Creating Account...' : 'Continue to Society Setup'}
+            <button type="submit" className="btn btn--primary w-full py-4 rounded-2xl shadow-lg shadow-primary/20 mt-4" disabled={loading}>
+              {loading ? <span className="btn-spinner"></span> : 'Secure Registration'}
             </button>
 
-            <div className="text-center pt-4">
-              <p className="text-sm font-bold text-slate-400">
-                Already have an account? <Link to="/login" className="text-indigo-600 font-black hover:underline">Sign In</Link>
-              </p>
-            </div>
+            <p className="auth-link">
+              Member already? <Link to="/login">Sign In</Link>
+            </p>
           </form>
         </div>
       </div>

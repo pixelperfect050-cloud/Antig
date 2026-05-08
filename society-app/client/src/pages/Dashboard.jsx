@@ -1,211 +1,458 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Link } from 'react-router-dom';
+import { useSocket } from '../context/SocketContext';
+import StatsCard from '../components/StatsCard';
 import Modal from '../components/Modal';
+import api from '../utils/api';
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const socket = useSocket();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [pendingPayments, setPendingPayments] = useState([]);
   const [showPayModal, setShowPayModal] = useState(false);
-  const [selectedPending, setSelectedPending] = useState(null);
+  const [selectedPayment, setSelectedPayment] = useState(null);
+  const [payForm, setPayForm] = useState({ amount: '', paymentMethod: 'upi', transactionId: '', notes: '' });
   const [saving, setSaving] = useState(false);
+  const isAdmin = user?.role === 'admin';
 
   useEffect(() => {
-    fetchDashboardData();
+    fetchStats();
   }, []);
 
-  const fetchDashboardData = async () => {
+  useEffect(() => {
+    if (socket) {
+      const handleSync = () => fetchStats();
+      socket.on('payment_recorded', handleSync);
+      socket.on('expense_added', handleSync);
+      socket.on('user_status_updated', handleSync);
+      return () => {
+        socket.off('payment_recorded', handleSync);
+        socket.off('expense_added', handleSync);
+        socket.off('user_status_updated', handleSync);
+      };
+    }
+  }, [socket]);
+
+  const fetchStats = async () => {
     try {
-      const [statsRes, pendingRes] = await Promise.all([
-        axios.get(`${import.meta.env.VITE_API_URL}/api/society/stats`),
-        axios.get(`${import.meta.env.VITE_API_URL}/api/payments/pending`)
-      ]);
-      setStats(statsRes.data);
-      setPendingPayments(pendingRes.data);
+      if (isAdmin && user?.societyId) {
+        const sid = user.societyId?._id || user.societyId;
+        const data = await api.get(`/api/dashboard/stats/${sid}`);
+        setStats(data);
+      } else {
+        const data = await api.get('/api/dashboard/member-stats');
+        setStats(data);
+      }
     } catch (err) {
-      console.error('Dashboard load error:', err);
+      console.error('Failed to fetch stats:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const formatCurrency = (amt) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0
-    }).format(amt || 0);
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount || 0);
+  };
+
+  const handleDownloadReceipt = async (p) => {
+    try {
+      await api.download(`/api/payments/${p._id}/receipt`, `Receipt_${p.month}_${p.year}.pdf`);
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const openPayModal = (p) => {
+    setSelectedPayment(p);
+    setPayForm({ amount: p.amount - p.paidAmount, paymentMethod: 'upi', transactionId: '', notes: '' });
+    setShowPayModal(true);
+  };
+
+  const submitPaymentRequest = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      await api.post('/api/payment-requests', {
+        paymentId: selectedPayment._id,
+        amount: parseFloat(payForm.amount),
+        month: selectedPayment.month,
+        year: selectedPayment.year,
+        paymentMethod: payForm.paymentMethod,
+        transactionId: payForm.transactionId,
+        notes: payForm.notes
+      });
+      setShowPayModal(false);
+      alert('Payment submitted for verification! Admin will review shortly.');
+      fetchStats();
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (loading) return <div className="page-loader"><div className="spinner"></div></div>;
 
-  const isAdmin = user?.role === 'admin';
+  if (!user?.societyId) {
+    return (
+      <div className="page">
+        <div className="empty-state">
+          <div className="empty-icon">🏢</div>
+          <h1 className="page-title text-center">Welcome!</h1>
+          <p className="text-center text-secondary">You haven't been assigned to a society yet. Please contact your society admin or set up a new society.</p>
+          {isAdmin && (
+            <div className="mt-4 flex justify-center">
+              <button onClick={() => navigate('/setup')} className="btn btn--primary">Setup Society</button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
+  // Admin Dashboard
+  if (isAdmin && stats) {
+    const maxCollection = Math.max(...(stats.monthlyTrend?.map(m => m.collected) || [1]));
+    const categoryColors = {
+      electricity: '#f59e0b', lift: '#8b5cf6', security: '#3b82f6', cleaning: '#10b981',
+      plumbing: '#ef4444', gardening: '#22c55e', repairs: '#f97316', water: '#06b6d4', misc: '#6b7280'
+    };
+    const totalExp = stats.expenseBreakdown?.reduce((s, e) => s + e.total, 0) || 1;
+
+    return (
+      <div className="page">
+        <header className="page-header">
+          <div className="page-title-group">
+            <h1 className="page-title">Dashboard</h1>
+            <p className="page-subtitle">Overview of your society</p>
+          </div>
+        </header>
+
+        {/* Alerts Section */}
+        {(stats.pendingPaymentRequests > 0 || stats.pendingFundVerifications > 0) && (
+          <div className="alert alert--warning mb-4">
+            <div className="flex items-center gap-2 flex-1">
+              <span>⚠️</span>
+              <div>
+                {stats.pendingPaymentRequests > 0 && <p><strong>{stats.pendingPaymentRequests}</strong> maintenance payments pending.</p>}
+                {stats.pendingFundVerifications > 0 && <p><strong>{stats.pendingFundVerifications}</strong> fund payments need review.</p>}
+              </div>
+            </div>
+            <button className="btn btn--primary btn--sm" onClick={() => navigate('/payment-verification')}>Review</button>
+          </div>
+        )}
+
+        {/* Primary Stats Grid */}
+        <div className="stats-grid">
+          <StatsCard icon="💰" label="Total Collection" value={formatCurrency(stats.totalCollection)} color="success" />
+          <StatsCard icon="📤" label="Total Expenses" value={formatCurrency(stats.totalExpenses)} color="danger" />
+          <StatsCard icon="💎" label="Balance" value={formatCurrency(stats.currentBalance)} color="primary" />
+          <StatsCard icon="📅" label="This Month" value={formatCurrency(stats.monthCollection)} color="warning" />
+        </div>
+
+        {/* Fund Stats - Collapsible/Adaptive */}
+        {stats.activeFundsCount > 0 && (
+          <div className="stats-grid mb-4">
+            <StatsCard icon="📢" label="Fund Target" value={formatCurrency(stats.totalFundTarget)} color="primary" />
+            <StatsCard icon="✅" label="Fund Collected" value={formatCurrency(stats.totalFundCollected)} color="success" />
+            <StatsCard icon="⏳" label="Fund Pending" value={formatCurrency(stats.totalFundPending)} color="warning" />
+          </div>
+        )}
+
+        <div className="dashboard-row">
+          {/* Status Overview Card */}
+          <div className="card">
+            <div className="card-header">
+              <h3 className="card-title">Flat Payment Status</h3>
+              <span className="card-badge">{stats.totalFlats} Flats</span>
+            </div>
+            <div className="flat-status-bars p-4">
+              <div className="status-bar-row mb-4">
+                <div className="flex justify-between mb-1">
+                  <span className="status-label">Paid</span>
+                  <span className="status-count">{stats.paidFlats}</span>
+                </div>
+                <div className="status-bar-track">
+                  <div className="status-bar-fill status-bar--paid" style={{ width: `${(stats.paidFlats / Math.max(stats.totalFlats, 1)) * 100}%` }}></div>
+                </div>
+              </div>
+              <div className="status-bar-row mb-4">
+                <div className="flex justify-between mb-1">
+                  <span className="status-label">Pending</span>
+                  <span className="status-count">{stats.pendingFlats}</span>
+                </div>
+                <div className="status-bar-track">
+                  <div className="status-bar-fill status-bar--pending" style={{ width: `${(stats.pendingFlats / Math.max(stats.totalFlats, 1)) * 100}%` }}></div>
+                </div>
+              </div>
+              <div className="status-bar-row">
+                <div className="flex justify-between mb-1">
+                  <span className="status-label">Partial</span>
+                  <span className="status-count">{stats.partialFlats}</span>
+                </div>
+                <div className="status-bar-track">
+                  <div className="status-bar-fill status-bar--partial" style={{ width: `${(stats.partialFlats / Math.max(stats.totalFlats, 1)) * 100}%` }}></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Metrics Card */}
+          <div className="card">
+            <div className="card-header">
+              <h3 className="card-title">Society Metrics</h3>
+            </div>
+            <div className="quick-stats p-4 grid grid-cols-2 gap-4">
+              <div className="quick-stat flex items-center gap-3">
+                <span className="text-2xl">🏢</span>
+                <div>
+                  <p className="font-bold text-lg">{stats.totalBlocks}</p>
+                  <p className="text-xs text-secondary">Blocks</p>
+                </div>
+              </div>
+              <div className="quick-stat flex items-center gap-3">
+                <span className="text-2xl">👥</span>
+                <div>
+                  <p className="font-bold text-lg">{stats.totalMembers}</p>
+                  <p className="text-xs text-secondary">Members</p>
+                </div>
+              </div>
+              <div className="quick-stat flex items-center gap-3">
+                <span className="text-2xl">⚡</span>
+                <div>
+                  <p className="font-bold text-lg">{formatCurrency(stats.monthExpenseTotal)}</p>
+                  <p className="text-xs text-secondary">Exp / Month</p>
+                </div>
+              </div>
+              <div className="quick-stat flex items-center gap-3">
+                <span className="text-2xl">🏘️</span>
+                <div>
+                  <p className="font-bold text-lg">{stats.totalFlats}</p>
+                  <p className="text-xs text-secondary">Total Flats</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Visualization Section */}
+        <div className="dashboard-row">
+          <div className="card">
+            <div className="card-header">
+              <h3 className="card-title">Collection Trend</h3>
+            </div>
+            <div className="chart-container p-4">
+              <div className="bar-chart flex items-end gap-2" style={{ height: '180px' }}>
+                {stats.monthlyTrend?.map((m, i) => (
+                  <div key={i} className="bar-group flex-1 flex flex-col items-center">
+                    <div className="bar-wrapper w-full flex items-end justify-center flex-1">
+                      <div 
+                        className="bar bar--collected w-4/5 rounded-t-md" 
+                        style={{ 
+                          height: `${(m.collected / maxCollection) * 100}%`,
+                          background: 'linear-gradient(180deg, var(--primary), var(--primary-light))'
+                        }}
+                        title={formatCurrency(m.collected)}
+                      ></div>
+                    </div>
+                    <span className="text-[10px] text-secondary mt-1 font-bold">{m.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="card">
+            <div className="card-header">
+              <h3 className="card-title">Expense Breakdown</h3>
+            </div>
+            <div className="expense-breakdown p-4 flex flex-col gap-4">
+              {stats.expenseBreakdown?.map((exp, i) => (
+                <div key={i} className="expense-item">
+                  <div className="flex justify-between mb-1">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full" style={{ background: categoryColors[exp._id] || '#6b7280' }}></span>
+                      <span className="text-xs font-bold capitalize">{exp._id}</span>
+                    </div>
+                    <span className="text-xs font-bold">{formatCurrency(exp.total)}</span>
+                  </div>
+                  <div className="expense-bar-track h-2 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="expense-bar-fill h-full rounded-full" style={{
+                      width: `${(exp.total / totalExp) * 100}%`,
+                      background: categoryColors[exp._id] || '#6b7280'
+                    }}></div>
+                  </div>
+                </div>
+              ))}
+              {(!stats.expenseBreakdown || stats.expenseBreakdown.length === 0) && (
+                <p className="text-center text-secondary p-4">No expenses recorded yet.</p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Member Requests Notification */}
+        {isAdmin && stats.pendingMembersCount > 0 && (
+          <div className="alert alert--info mb-4">
+            <p className="flex-1">👋 You have <strong>{stats.pendingMembersCount}</strong> new resident requests.</p>
+            <button className="btn btn--primary btn--sm" onClick={() => navigate('/requests')}>Manage</button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Member Dashboard
   return (
-    <div className="animate-up">
-      <header className="mb-8">
-        <p className="page-subtitle uppercase tracking-widest mb-1">Overview</p>
-        <h1 className="page-title">Dashboard</h1>
-        <p className="text-secondary font-medium">Welcome back, {user?.name}</p>
+    <div className="page">
+      <header className="page-header">
+        <div>
+          <h1 className="page-title">My Dashboard</h1>
+          <p className="page-subtitle">Your society account summary</p>
+        </div>
       </header>
 
-      {/* Admin Action Alerts */}
-      {isAdmin && stats?.pendingVerifications > 0 && (
-        <div className="card bg-indigo-600 text-white border-none shadow-lg mb-8 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 blur-2xl rounded-full -mr-16 -mt-16"></div>
-          <div className="relative z-10 flex items-center justify-between">
-            <div>
-              <p className="text-sm font-bold opacity-90 mb-1">Verification Required</p>
-              <h3 className="text-xl font-black">{stats.pendingVerifications} payments waiting</h3>
-            </div>
-            <Link to="/verify-payments" className="btn bg-white text-indigo-600 px-6 py-3 rounded-xl font-black shadow-xl shadow-indigo-900/20 active:scale-95 transition-transform">
-              Review
-            </Link>
+      {stats?.pendingRequests > 0 && (
+        <div className="alert alert--info mb-4">
+          <span>⏳</span>
+          <p><strong>{stats.pendingRequests}</strong> payment(s) pending verification by admin.</p>
+        </div>
+      )}
+
+      <div className="stats-grid">
+        <StatsCard icon="✅" label="Maintenance Paid" value={formatCurrency(stats?.totalPaid)} color="success" />
+        <StatsCard icon="⏳" label="Maintenance Due" value={formatCurrency(stats?.totalDue)} color="danger" />
+        <StatsCard icon="📢" label="Fund Paid" value={formatCurrency(stats?.totalFundPaid)} color="primary" />
+        <StatsCard icon="💰" label="Fund Due" value={formatCurrency(stats?.totalFundDue)} color="warning" />
+      </div>
+
+      {/* Maintenance History */}
+      <div className="card mb-6">
+        <div className="card-header">
+          <h3 className="card-title">Payment History</h3>
+        </div>
+        <div className="table-wrapper">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Month</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {stats?.payments?.map((p, i) => (
+                <tr key={i}>
+                  <td className="font-bold">{MONTHS[p.month - 1]} {p.year}</td>
+                  <td>{formatCurrency(p.amount)}</td>
+                  <td>
+                    <span className={`status-badge status-badge--${p.status}`}>
+                      {p.status}
+                    </span>
+                  </td>
+                  <td>
+                    <div className="flex gap-2">
+                      {p.status !== 'paid' && (
+                        <button className="btn btn--sm btn--primary" onClick={() => openPayModal(p)}>Pay</button>
+                      )}
+                      <button className="btn--icon" onClick={() => handleDownloadReceipt(p)} title="Download Receipt">📥</button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {(!stats?.payments || stats.payments.length === 0) && (
+                <tr><td colSpan="4" className="text-center text-secondary p-8">No records found.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Funds Section */}
+      {stats?.fundPayments?.length > 0 && (
+        <div className="card">
+          <div className="card-header">
+            <h3 className="card-title">Society Funds</h3>
+          </div>
+          <div className="table-wrapper">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Fund</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {stats.fundPayments.map((fp, i) => (
+                  <tr key={i}>
+                    <td className="font-bold">{fp.fundId?.name || 'Fund'}</td>
+                    <td>{formatCurrency(fp.amount)}</td>
+                    <td>
+                      <span className={`status-badge status-badge--${fp.status === 'paid' ? 'paid' : fp.status === 'pending_verification' ? 'warning' : 'pending'}`}>
+                        {fp.status === 'paid' ? 'Paid' : fp.status === 'pending_verification' ? 'Verifying' : 'Pending'}
+                      </span>
+                    </td>
+                    <td>
+                      {fp.status === 'pending' && (
+                        <button className="btn btn--sm btn--primary" onClick={() => navigate('/funds')}>Pay</button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
 
-      {/* Stats Grid - Premium Layout */}
-      <div className="stats-grid">
-        <div className="stat-card">
-          <div className="stat-icon">💰</div>
-          <div className="stat-info">
-            <span className="stat-label">Total Collection</span>
-            <span className="stat-value">{formatCurrency(stats?.totalCollection)}</span>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon" style={{ background: '#FEF2F2', color: '#EF4444' }}>📉</div>
-          <div className="stat-info">
-            <span className="stat-label">Total Expenses</span>
-            <span className="stat-value">{formatCurrency(stats?.totalExpenses)}</span>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon" style={{ background: '#ECFDF5', color: '#10B981' }}>💎</div>
-          <div className="stat-info">
-            <span className="stat-label">Net Balance</span>
-            <span className="stat-value">{formatCurrency(stats?.balance)}</span>
-          </div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-icon" style={{ background: '#EEF2FF', color: '#4F46E5' }}>📅</div>
-          <div className="stat-info">
-            <span className="stat-label">This Month</span>
-            <span className="stat-value">{formatCurrency(stats?.thisMonthCollection)}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Funds Progress */}
-      <div className="section-header">
-        <h2 className="section-title">Active Fund Targets</h2>
-        <Link to="/funds" className="text-sm font-bold text-primary">View All</Link>
-      </div>
-
-      <div className="grid-2">
-        {stats?.activeFunds?.map(fund => {
-          const progress = (fund.collectedAmount / fund.targetAmount) * 100;
-          return (
-            <div key={fund._id} className="card">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h3 className="font-black text-slate-900">{fund.name}</h3>
-                  <p className="text-[10px] font-bold text-secondary uppercase tracking-widest">{fund.category}</p>
-                </div>
-                <span className={`status-badge ${progress >= 100 ? 'status-badge--success' : 'status-badge--warning'}`}>
-                  {Math.round(progress)}%
-                </span>
+      {/* Responsive Pay Modal */}
+      <Modal isOpen={showPayModal} onClose={() => setShowPayModal(false)} title="Submit Payment">
+        {selectedPayment && (
+          <form onSubmit={submitPaymentRequest} className="modal-form p-4">
+            <div className="payment-info-box mb-4 p-3 bg-slate-50 rounded-lg border border-dashed border-slate-200">
+              <p className="text-xs text-secondary">Month</p>
+              <p className="font-bold mb-2">{MONTHS[selectedPayment.month - 1]} {selectedPayment.year}</p>
+              <p className="text-xs text-secondary">Due Amount</p>
+              <p className="font-bold text-primary text-xl">{formatCurrency(selectedPayment.amount - selectedPayment.paidAmount)}</p>
+            </div>
+            
+            <div className="grid gap-4">
+              <div className="form-group">
+                <label className="text-sm font-bold">Amount to Pay</label>
+                <input type="number" min="1" value={payForm.amount} onChange={e => setPayForm({ ...payForm, amount: e.target.value })} required />
               </div>
               
-              <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden mb-3">
-                <div 
-                  className="h-full bg-indigo-500 rounded-full transition-all duration-1000" 
-                  style={{ width: `${Math.min(progress, 100)}%` }}
-                />
+              <div className="form-group">
+                <label className="text-sm font-bold">Payment Mode</label>
+                <select value={payForm.paymentMethod} onChange={e => setPayForm({ ...payForm, paymentMethod: e.target.value })}>
+                  <option value="upi">UPI / GPay / PhonePe</option>
+                  <option value="bank_transfer">Net Banking</option>
+                  <option value="cash">Cash Payment</option>
+                  <option value="cheque">Cheque</option>
+                </select>
               </div>
-
-              <div className="flex justify-between items-end">
-                <div>
-                  <p className="text-[10px] font-black text-secondary uppercase">Collected</p>
-                  <p className="font-black text-indigo-600">{formatCurrency(fund.collectedAmount)}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-[10px] font-black text-secondary uppercase">Target</p>
-                  <p className="font-bold text-slate-900">{formatCurrency(fund.targetAmount)}</p>
-                </div>
+              
+              <div className="form-group">
+                <label className="text-sm font-bold">Ref / Transaction ID</label>
+                <input type="text" value={payForm.transactionId} onChange={e => setPayForm({ ...payForm, transactionId: e.target.value })} placeholder="Enter Reference No." />
               </div>
             </div>
-          );
-        })}
-      </div>
 
-      {/* Pending Tasks / Quick Actions */}
-      <div className="section-header">
-        <h2 className="section-title">Pending Payments</h2>
-      </div>
-
-      <div className="space-y-4">
-        {pendingPayments.length > 0 ? (
-          pendingPayments.slice(0, 3).map(pay => (
-            <div key={pay._id} className="card card--interactive flex items-center justify-between p-5 border-l-4 border-l-amber-400">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl">⏳</div>
-                <div>
-                  <h3 className="font-black text-slate-900">Maintenance • Flat {pay.flatId?.number}</h3>
-                  <p className="text-xs font-bold text-secondary">{pay.month}/{pay.year} • {formatCurrency(pay.amount)}</p>
-                </div>
-              </div>
-              <button 
-                className="btn btn--secondary btn--sm py-2 px-4 rounded-xl text-xs"
-                onClick={() => { setSelectedPending(pay); setShowPayModal(true); }}
-              >
-                Pay Now
+            <div className="modal-actions mt-6 flex gap-3">
+              <button type="button" className="btn btn--secondary flex-1" onClick={() => setShowPayModal(false)}>Cancel</button>
+              <button type="submit" className="btn btn--primary flex-1" disabled={saving}>
+                {saving ? <span className="btn-spinner"></span> : 'Submit Payment'}
               </button>
             </div>
-          ))
-        ) : (
-          <div className="card text-center py-10">
-            <div className="text-4xl mb-3">✅</div>
-            <p className="font-black text-slate-900">All clear!</p>
-            <p className="text-xs text-secondary font-bold">No pending maintenance payments found.</p>
-          </div>
-        )}
-      </div>
-
-      {/* Pay Modal - Simplified for Mobile */}
-      <Modal isOpen={showPayModal} onClose={() => setShowPayModal(false)} title="Quick Payment">
-        {selectedPending && (
-          <div className="p-4">
-            <div className="bg-slate-50 rounded-2xl p-6 mb-6 text-center">
-              <p className="text-xs font-black text-secondary uppercase tracking-widest mb-2">Total Amount Due</p>
-              <h2 className="text-3xl font-black text-indigo-600">{formatCurrency(selectedPending.amount)}</h2>
-              <p className="text-[10px] font-bold text-slate-400 mt-2">Maintenance for {selectedPending.month}/{selectedPending.year}</p>
-            </div>
-
-            <div className="space-y-4">
-              <div className="card border-primary bg-primary-light/30">
-                <p className="text-[10px] font-black text-primary uppercase mb-3">Choose Payment Method</p>
-                <div className="grid grid-cols-2 gap-3">
-                  <button className="btn bg-white border border-slate-200 text-slate-700 p-4 rounded-2xl flex flex-col items-center gap-2">
-                    <span className="text-xl">📱</span>
-                    <span className="text-[10px] font-black uppercase">UPI App</span>
-                  </button>
-                  <button className="btn bg-white border border-slate-200 text-slate-700 p-4 rounded-2xl flex flex-col items-center gap-2">
-                    <span className="text-xl">🏦</span>
-                    <span className="text-[10px] font-black uppercase">Bank Trf</span>
-                  </button>
-                </div>
-              </div>
-
-              <button className="btn btn--primary btn--full py-5 rounded-2xl shadow-xl">
-                CONTINUE TO PAYMENT
-              </button>
-            </div>
-          </div>
+          </form>
         )}
       </Modal>
     </div>

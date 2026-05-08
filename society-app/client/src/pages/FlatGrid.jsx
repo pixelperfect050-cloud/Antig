@@ -1,116 +1,151 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { useParams, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import api from '../utils/api';
 
 const FlatGrid = () => {
   const { blockId } = useParams();
+  const navigate = useNavigate();
+  const [flats, setFlats] = useState([]);
   const [block, setBlock] = useState(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
 
   useEffect(() => {
-    fetchBlockData();
+    fetchData();
   }, [blockId]);
 
-  const fetchBlockData = async () => {
+  const fetchData = async () => {
     try {
-      const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/blocks/${blockId}`);
-      setBlock(res.data);
+      const [flatsData, blockData] = await Promise.all([
+        api.get(`/api/flats/block/${blockId}`),
+        api.get(`/api/blocks/${blockId}`)
+      ]);
+      setFlats(flatsData);
+      setBlock(blockData);
     } catch (err) {
-      console.error('Fetch block data error:', err);
+      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading) return <div className="page-loader"><div className="spinner"></div></div>;
-  if (!block) return <div className="p-10 text-center font-black">Block not found</div>;
+  const filteredFlats = flats.filter(f => filter === 'all' || f.currentMonthStatus === filter);
 
   // Group flats by floor
   const floors = {};
-  block.flats.forEach(flat => {
+  filteredFlats.forEach(flat => {
     if (!floors[flat.floor]) floors[flat.floor] = [];
     floors[flat.floor].push(flat);
   });
 
-  const floorNumbers = Object.keys(floors).sort((a, b) => b - a);
+  const statusCounts = {
+    all: flats.length,
+    paid: flats.filter(f => f.currentMonthStatus === 'paid').length,
+    pending: flats.filter(f => f.currentMonthStatus === 'pending').length,
+    partial: flats.filter(f => f.currentMonthStatus === 'partial').length
+  };
+
+  if (loading) return <div className="page-loader"><div className="spinner"></div></div>;
 
   return (
-    <div className="animate-up">
-      <header className="mb-8">
-        <div className="flex items-center gap-2 text-indigo-600 font-bold text-xs uppercase tracking-widest mb-1">
-          <Link to="/blocks">Blocks</Link>
-          <span>/</span>
-          <span>Block {block.name}</span>
+    <div className="page">
+      <header className="page-header">
+        <div className="page-title-group">
+          <div className="breadcrumb flex items-center gap-1 text-xs text-secondary mb-1">
+            <Link to="/blocks" className="hover:text-primary">Blocks</Link>
+            <span>›</span>
+            <span className="font-bold text-text">Block {block?.name}</span>
+          </div>
+          <h1 className="page-title">Block {block?.name}</h1>
+          <p className="page-subtitle">{block?.totalFloors} Floors • {flats.length} Flats</p>
         </div>
-        <h1 className="page-title">Unit Management</h1>
-        <p className="text-secondary font-medium">Floor-wise visualization of all flats</p>
       </header>
 
-      {/* Filter Tabs for Payment Status */}
-      <div className="card mb-8">
-        <p className="text-[10px] font-black text-secondary uppercase tracking-widest mb-4">Filter by Status</p>
-        <div className="filter-tabs">
-          {['all', 'paid', 'pending', 'partial'].map(s => (
-            <button key={s} className={`filter-tab ${filter === s ? 'active' : ''}`} onClick={() => setFilter(s)}>
-              {s.toUpperCase()}
-            </button>
-          ))}
+      {/* Responsive Filter Tabs */}
+      <div className="filter-tabs mb-6">
+        {[
+          { key: 'all', label: 'All', icon: '📋' },
+          { key: 'paid', label: 'Paid', icon: '✅' },
+          { key: 'pending', label: 'Pending', icon: '⏳' },
+          { key: 'partial', label: 'Partial', icon: '🔶' }
+        ].map(tab => (
+          <button 
+            key={tab.key}
+            className={`filter-tab ${filter === tab.key ? 'active' : ''} filter-tab--${tab.key}`}
+            onClick={() => setFilter(tab.key)}
+          >
+            <span className="text-lg">{tab.icon}</span>
+            <span className="font-bold">{tab.label}</span>
+            <span className="filter-count">{statusCounts[tab.key]}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Legend - Responsive and Clean */}
+      <div className="card mb-6 p-4 bg-slate-50 border-dashed">
+        <div className="flex flex-wrap gap-4 justify-center sm:justify-start">
+          <div className="legend-item-flat flex items-center gap-2 text-xs font-bold">
+            <span className="w-3 h-3 rounded-full bg-success"></span> Paid
+          </div>
+          <div className="legend-item-flat flex items-center gap-2 text-xs font-bold">
+            <span className="w-3 h-3 rounded-full bg-danger"></span> Pending
+          </div>
+          <div className="legend-item-flat flex items-center gap-2 text-xs font-bold">
+            <span className="w-3 h-3 rounded-full bg-warning"></span> Partial
+          </div>
+          <div className="legend-item-flat flex items-center gap-2 text-xs font-bold text-muted">
+            <span className="w-3 h-3 rounded-full bg-slate-300"></span> Vacant
+          </div>
         </div>
       </div>
 
-      {/* Visualization Grid */}
-      <div className="space-y-12">
-        {floorNumbers.map(floorNum => (
-          <div key={floorNum} className="relative">
-            {/* Floor Label */}
-            <div className="flex items-center gap-4 mb-4">
-              <div className="bg-slate-900 text-white px-4 py-1.5 rounded-lg text-xs font-black uppercase tracking-widest shadow-lg">
-                Floor {floorNum}
-              </div>
-              <div className="flex-1 h-px bg-slate-200"></div>
+      {/* Flat Grid by Floor */}
+      <div className="floor-sections flex flex-col gap-8">
+        {Object.keys(floors).sort((a, b) => b - a).map(floor => (
+          <div key={floor} className="floor-section">
+            <div className="flex items-center gap-3 mb-3 px-1">
+              <div className="h-6 w-1 bg-primary rounded-full"></div>
+              <h3 className="text-xs font-black text-secondary tracking-widest uppercase">FLOOR {floor}</h3>
             </div>
-
-            {/* Flat Grid for this Floor */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-              {floors[floorNum].map(flat => {
-                const isMatch = filter === 'all' || flat.currentMonthStatus === filter;
-                return (
-                  <Link 
-                    key={flat._id} 
-                    to={`/flats/${flat._id}`}
-                    className={`
-                      card p-4 transition-all duration-300 group
-                      ${!isMatch ? 'opacity-30 scale-95 grayscale' : 'hover:-translate-y-1 hover:shadow-xl'}
-                      ${flat.currentMonthStatus === 'paid' ? 'border-l-4 border-l-emerald-500' : 
-                        flat.currentMonthStatus === 'partial' ? 'border-l-4 border-l-amber-400' : 'border-l-4 border-l-rose-500'}
-                    `}
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <span className="text-lg font-black text-slate-900 group-hover:text-indigo-600 transition-colors">
-                        {flat.number}
-                      </span>
-                      <div className={`w-2 h-2 rounded-full ${
-                        flat.currentMonthStatus === 'paid' ? 'bg-emerald-500' : 
-                        flat.currentMonthStatus === 'partial' ? 'bg-amber-400' : 'bg-rose-500'
-                      }`} />
-                    </div>
-                    
-                    <p className="text-[10px] font-bold text-secondary truncate mb-3">
-                      {flat.ownerName || 'Vaccant'}
-                    </p>
-
-                    <div className="flex items-center justify-between mt-auto">
-                      <span className="text-[9px] font-black uppercase text-slate-400">{flat.type}</span>
-                      <span className="text-[10px] font-bold text-indigo-500 group-hover:underline">View Details</span>
-                    </div>
-                  </Link>
-                );
-              })}
+            
+            <div className="flat-grid">
+              {floors[floor].map(flat => (
+                <div 
+                  key={flat._id}
+                  className={`flat-cell flat-cell--${flat.currentMonthStatus || 'vacant'}`}
+                  onClick={() => navigate(`/flats/${flat._id}`)}
+                  style={{
+                    background: flat.currentMonthStatus === 'paid' ? 'rgba(16, 185, 129, 0.1)' : 
+                               flat.currentMonthStatus === 'pending' ? 'rgba(239, 68, 68, 0.1)' :
+                               flat.currentMonthStatus === 'partial' ? 'rgba(245, 158, 11, 0.1)' : 'var(--bg-input)',
+                    border: `2px solid ${
+                      flat.currentMonthStatus === 'paid' ? 'var(--success)' : 
+                      flat.currentMonthStatus === 'pending' ? 'var(--danger)' :
+                      flat.currentMonthStatus === 'partial' ? 'var(--warning)' : 'var(--border)'
+                    }`,
+                    color: flat.currentMonthStatus === 'paid' ? 'var(--success)' : 
+                           flat.currentMonthStatus === 'pending' ? 'var(--danger)' :
+                           flat.currentMonthStatus === 'partial' ? 'var(--warning)' : 'var(--text-muted)'
+                  }}
+                >
+                  <span className="text-lg font-black tracking-tighter">{flat.number}</span>
+                  <span className="text-[9px] font-bold opacity-70 truncate w-full text-center px-1">
+                    {flat.isOccupied ? (flat.ownerName?.split(' ')[0] || 'Member') : 'VACANT'}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
         ))}
       </div>
+
+      {filteredFlats.length === 0 && (
+        <div className="empty-state p-12 text-center">
+          <div className="text-4xl mb-4">🔍</div>
+          <h2 className="text-xl font-bold">No flats found</h2>
+          <p className="text-secondary">Try adjusting your filters</p>
+        </div>
+      )}
     </div>
   );
 };

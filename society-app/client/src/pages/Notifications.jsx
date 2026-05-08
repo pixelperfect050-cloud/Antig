@@ -1,30 +1,45 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useSocket } from '../context/SocketContext';
+import api from '../utils/api';
 
 const Notifications = () => {
   const { user } = useAuth();
+  const socket = useSocket();
   const [data, setData] = useState({ notifications: [], unreadCount: 0 });
   const [loading, setLoading] = useState(true);
-
-  const typeIcons = {
-    payment: '💰',
-    announcement: '📢',
-    maintenance: '🛠️',
-    event: '🎉',
-    warning: '🚨'
-  };
 
   useEffect(() => {
     fetchNotifications();
   }, []);
 
+  useEffect(() => {
+    if (socket) {
+      const handleSocketEvent = (eventData) => {
+        console.log('Socket event received:', eventData);
+        fetchNotifications();
+      };
+
+      socket.on('notification_received', handleSocketEvent);
+      socket.on('payment_recorded', handleSocketEvent);
+      socket.on('expense_added', handleSocketEvent);
+      socket.on('user_status_updated', handleSocketEvent);
+
+      return () => {
+        socket.off('notification_received', handleSocketEvent);
+        socket.off('payment_recorded', handleSocketEvent);
+        socket.off('expense_added', handleSocketEvent);
+        socket.off('user_status_updated', handleSocketEvent);
+      };
+    }
+  }, [socket]);
+
   const fetchNotifications = async () => {
     try {
-      const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/notifications`);
-      setData(res.data);
+      const result = await api.get('/api/notifications');
+      setData(result);
     } catch (err) {
-      console.error('Fetch notifications error:', err);
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -32,69 +47,59 @@ const Notifications = () => {
 
   const markAsRead = async (id) => {
     try {
-      await axios.put(`${import.meta.env.VITE_API_URL}/api/notifications/${id}/read`);
+      await api.put(`/api/notifications/${id}/read`);
       fetchNotifications();
     } catch (err) {
-      console.error('Mark read error:', err);
+      console.error(err);
     }
   };
 
   const markAllRead = async () => {
     try {
-      await axios.put(`${import.meta.env.VITE_API_URL}/api/notifications/read-all`);
+      await api.put('/api/notifications/read-all');
       fetchNotifications();
     } catch (err) {
-      console.error('Mark all read error:', err);
+      console.error(err);
     }
+  };
+
+  const typeIcons = {
+    payment_reminder: '💰',
+    expense_update: '📋',
+    announcement: '📢',
+    maintenance: '🔧',
+    general: '📌',
+    success: '✅',
+    info: 'ℹ️'
   };
 
   if (loading) return <div className="page-loader"><div className="spinner"></div></div>;
 
   return (
-    <div className="animate-up">
-      <header className="mb-8 flex justify-between items-end">
-        <div>
-          <p className="page-subtitle uppercase tracking-widest mb-1">Inbox</p>
+    <div className="page">
+      <header className="page-header">
+        <div className="page-title-group">
           <h1 className="page-title">Notifications</h1>
+          <p className="page-subtitle">{data.unreadCount || 0} unread messages</p>
         </div>
         {data.unreadCount > 0 && (
-          <button onClick={markAllRead} className="text-xs font-black text-indigo-600 uppercase tracking-widest mb-2 border-b-2 border-indigo-100 pb-1">
-            Mark all read
+          <button className="btn btn--primary btn--sm mt-2 sm:mt-0" onClick={markAllRead}>
+            ✓ Read All
           </button>
         )}
       </header>
 
-      {/* Unread Highlight */}
-      {data.unreadCount > 0 && (
-        <div className="bg-indigo-600 text-white rounded-3xl p-6 mb-8 flex items-center justify-between shadow-xl shadow-indigo-900/20">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-2xl">🔔</div>
-            <div>
-              <p className="font-black text-lg">{data.unreadCount} New Alerts</p>
-              <p className="text-[10px] font-bold text-indigo-200 uppercase tracking-widest">Action items for you</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Notification List */}
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-3">
         {data.notifications.map(notif => {
           const isRead = notif.readBy?.includes(user?.id || user?._id);
           return (
             <div key={notif._id} 
-              className={`
-                card group transition-all cursor-pointer p-0 overflow-hidden
-                ${isRead ? 'opacity-70 grayscale-[0.5]' : 'ring-2 ring-indigo-500/10 shadow-lg'}
-              `}
+              className={`card group transition-all cursor-pointer ${isRead ? 'opacity-80' : 'border-l-4 border-l-primary shadow-lg ring-1 ring-primary/10'}`}
               onClick={() => !isRead && markAsRead(notif._id)}>
-              <div className="p-6 flex gap-5 relative">
-                {!isRead && <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500"></div>}
-                
-                <div className={`
-                  w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shrink-0
-                  ${isRead ? 'bg-slate-100 text-slate-400' : 'bg-indigo-50 text-indigo-600'}
-                `}>
+              <div className="p-4 flex gap-4">
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl shrink-0 ${
+                  isRead ? 'bg-slate-50 text-secondary' : 'bg-primary-light text-primary'
+                }`}>
                   {typeIcons[notif.type] || '📌'}
                 </div>
                 
@@ -103,18 +108,21 @@ const Notifications = () => {
                     <h3 className={`text-sm font-black truncate pr-4 ${isRead ? 'text-secondary' : 'text-slate-900'}`}>
                       {notif.title}
                     </h3>
-                    <span className="text-[9px] font-black text-slate-400 whitespace-nowrap uppercase tracking-tighter">
-                      {new Date(notif.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-                    </span>
+                    {!isRead && (
+                      <div className="w-2 h-2 rounded-full bg-primary shrink-0 mt-1.5 animate-pulse"></div>
+                    )}
                   </div>
                   
                   <p className={`text-xs leading-relaxed mb-3 ${isRead ? 'text-secondary' : 'text-slate-600 font-medium'}`}>
                     {notif.message}
                   </p>
                   
-                  <div className="flex items-center gap-2">
-                    <span className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded bg-slate-100 text-slate-500">
-                      {notif.type}
+                  <div className="flex items-center gap-2 text-[10px] font-bold text-secondary uppercase tracking-tighter">
+                    <span className="shrink-0">🕒</span>
+                    <span className="truncate">
+                      {new Date(notif.createdAt).toLocaleDateString('en-IN', {
+                        day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                      })}
                     </span>
                   </div>
                 </div>
@@ -124,10 +132,10 @@ const Notifications = () => {
         })}
         
         {data.notifications.length === 0 && (
-          <div className="card text-center py-24">
-            <div className="text-6xl mb-6">🏝️</div>
-            <h2 className="text-xl font-black mb-2">Inbox is Empty</h2>
-            <p className="text-secondary font-medium">You're all caught up with your society updates.</p>
+          <div className="empty-state p-20">
+            <div className="text-6xl mb-6">🔔</div>
+            <h2 className="text-xl font-black mb-2">All Caught Up</h2>
+            <p className="text-secondary">You don't have any new notifications at the moment.</p>
           </div>
         )}
       </div>
