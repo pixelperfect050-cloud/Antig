@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+﻿@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 :root {
   --primary: #6366f1; --primary-light: #818cf8; --primary-dark: #4f46e5;
   --success: #10b981; --success-light: #d1fae5; --danger: #ef4444; --danger-light: #fee2e2;
@@ -457,233 +457,282 @@ table, .table { width: 100%; border-collapse: collapse; }
 .text-muted { color: var(--text-muted); }
 .text-success { color: var(--success); }
 .text-danger { color: var(--danger); }
-/* Responsive */
+/* ========== RESPONSIVE ========== */
+
+/* TV / Ultra-wide (1600px+) */
+@media (min-width: 1600px) {
+  .page { max-width: 1600px; padding: 2rem 3rem; }
+  .stats-grid { grid-template-columns: repeat(4, 1fr); gap: 1.5rem; }
+  .stats-card { padding: 1.5rem; }
+  .stats-card__value { font-size: 1.8rem; }
+  .dashboard-row { gap: 1.5rem; }
+  .verification-grid { grid-template-columns: repeat(3, 1fr); }
+  .funds-grid { grid-template-columns: repeat(3, 1fr); }
+  .blocks-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* Desktop (1200-1599px) - default, mostly fine */
+
+/* Small Desktop / Tablet Landscape (1024px) */
 @media (max-width: 1024px) {
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
   .dashboard-row { grid-template-columns: 1fr; }
-  .flat-detail { grid-template-columns: 1fr; }
-  .flat-detail-grid { grid-template-columns: 1fr; }
+  .flat-detail, .flat-detail-grid { grid-template-columns: 1fr; }
   .payment-summary { grid-template-columns: repeat(3, 1fr); }
   .report-summary { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* Tablet / Mobile (768px) */
 @media (max-width: 768px) {
-  .sidebar { transform: translateX(-100%); }
+  /* Sidebar OFF, bottom nav ON */
+  .sidebar { transform: translateX(-100%); width: var(--sidebar-w); }
   .sidebar.open { transform: translateX(0); }
   .sidebar-close { display: block; }
-  .sidebar-overlay { display: block; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 99; }
+  .sidebar-overlay { display: block; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 99; }
   .mobile-header { display: flex; }
-  .main-content { margin-left: 0; padding-top: 0; min-width: 0; overflow-x: hidden; }
-  .page { padding: 1rem 0.75rem; overflow-x: hidden; }
-  .page-title { font-size: 1.3rem; }
-  .stats-grid { grid-template-columns: 1fr 1fr; gap: 0.6rem; }
-  .stats-grid--2 { grid-template-columns: 1fr; }
-  .stats-card { padding: 0.85rem 0.75rem; gap: 0.6rem; }
-  .stats-card__icon { font-size: 1.5rem; }
-  .stats-card__value { font-size: 1.15rem; }
-  .stats-card__label { font-size: .72rem; }
-  .stats-card__sub { font-size: .68rem; }
-  .form-row, .form-row--3 { grid-template-columns: 1fr; }
-  .floor-grid { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); }
-  .auth-card { padding: 1.5rem; }
-  .blocks-grid { grid-template-columns: 1fr; }
-  .quick-stats { grid-template-columns: 1fr 1fr; }
-  .flat-detail-grid { grid-template-columns: 1fr; }
-  .summary-stats { grid-template-columns: 1fr 1fr; }
-  .filter-tabs { gap: .35rem; }
-  .filter-tab { padding: .4rem .75rem; font-size: .8rem; }
-  .expense-card { flex-wrap: wrap; }
-  .category-pills { gap: .3rem; }
-  .payment-summary { grid-template-columns: 1fr; }
-  .report-summary { grid-template-columns: 1fr 1fr; }
-  .card-header { padding: 1rem; }
-  .chart-container { padding: 1rem; }
-  .alert { font-size: .8rem; padding: .65rem .75rem; }
-  .card { overflow: hidden; }
-  .table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .dashboard-row { gap: 0.75rem; }
-  .flat-status-bars { padding: 1rem; }
-  .quick-stats { padding: 1rem; gap: 1rem; }
-  .expense-breakdown { padding: 1rem; }
-}
-@media (max-width: 480px) {
-  .stats-grid { grid-template-columns: 1fr 1fr; gap: 0.5rem; }
-  .stats-card { padding: 0.75rem 0.65rem; gap: 0.5rem; }
-  .stats-card__icon { font-size: 1.3rem; }
-  .stats-card__value { font-size: 1rem; }
-  .stats-card__label { font-size: .68rem; }
-  .bar-chart { height: 120px; }
-  .page-header { flex-direction: column; align-items: flex-start; }
-  .flat-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
-  .report-summary { grid-template-columns: 1fr; }
-  .filters-bar { flex-direction: column; align-items: stretch; }
-  .page { padding: 0.75rem 0.6rem; }
-  .page-title { font-size: 1.15rem; }
-  .btn--sm { padding: .3rem .6rem; font-size: .75rem; }
-  .alert { flex-direction: column !important; gap: 0.5rem !important; align-items: flex-start !important; }
-  .expense-info { min-width: 80px; }
-  .expense-amount { min-width: 55px; font-size: .75rem; }
-}
-@media (max-width: 360px) {
-  .page { padding: 0.5rem; }
-  .stats-grid { gap: 0.4rem; }
-  .stats-card { padding: 0.6rem 0.5rem; gap: 0.4rem; }
-  .stats-card__icon { font-size: 1.1rem; }
-  .stats-card__value { font-size: 0.9rem; }
-  .stats-card__label { font-size: .65rem; }
-}
-/* Bottom Nav */
-.bottom-nav {
-  display: none;
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 60px;
-  background: var(--bg-card);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-top: 1px solid var(--border);
-  z-index: 1000;
-  justify-content: space-around;
-  align-items: center;
-  padding: 0 0.25rem;
-  padding-bottom: env(safe-area-inset-bottom);
-  box-shadow: 0 -2px 10px rgba(0,0,0,.08);
-}
+  .main-content { margin-left: 0 !important; padding-top: 0; min-width: 0; width: 100%; overflow-x: hidden; }
 
-.bottom-nav-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  color: var(--text-secondary);
-  text-decoration: none;
-  font-size: 0.65rem;
-  font-weight: 500;
-  flex: 1;
-  height: 100%;
-  min-width: 0;
-  overflow: hidden;
-}
+  /* Page */
+  .page { padding: 1rem .75rem; overflow-x: hidden; width: 100%; max-width: 100vw; }
+  .page-title { font-size: 1.25rem; }
+  .page-subtitle { font-size: .8rem; }
+  .page-header { gap: .75rem; }
 
-.bottom-nav-item.active {
-  color: var(--primary);
-}
-
-.bottom-nav-icon {
-  font-size: 1.3rem;
-}
-
-.bottom-nav-label {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
-}
-
-@media (max-width: 768px) {
-  .bottom-nav {
-    display: flex;
-  }
-  .main-content {
-    padding-bottom: 70px;
-  }
-  .sidebar {
-    display: none;
-  }
-}
-
-.premium-card {
-  background: var(--surface);
-  border-radius: 20px;
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow-lg);
-  overflow: hidden;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.premium-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-}
-
-/* ============ VERIFICATION CARDS ============ */
-.verification-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 1rem; }
-.verification-card { padding: 1.25rem; transition: all .3s; border-left: 4px solid var(--border); }
-.verification-card--pending_verification { border-left-color: var(--warning); }
-.verification-card--approved { border-left-color: var(--success); }
-.verification-card--rejected { border-left-color: var(--danger); }
-.verification-card--correction_needed { border-left-color: var(--info); }
-.vc-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; gap: .5rem; flex-wrap: wrap; }
-.vc-flat-info { display: flex; flex-direction: column; }
-.vc-flat-number { font-weight: 700; font-size: 1.05rem; }
-.vc-member-name { font-size: .8rem; color: var(--text-secondary); }
-.vc-details { display: flex; flex-direction: column; gap: .4rem; padding: .75rem; background: var(--bg-input); border-radius: var(--radius-sm); margin-bottom: .75rem; }
-.vc-detail-row { display: flex; justify-content: space-between; align-items: center; gap: .5rem; }
-.vc-label { font-size: .78rem; color: var(--text-secondary); font-weight: 500; }
-.vc-value { font-size: .85rem; font-weight: 600; text-align: right; }
-.vc-amount { font-size: 1.1rem; color: var(--primary); font-weight: 700; }
-.vc-screenshot { margin-bottom: .75rem; }
-.vc-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
-
-/* ============ STATUS BADGE VARIANTS ============ */
-.status-badge--success { background: var(--success-light); color: #065f46; }
-.status-badge--warning { background: var(--warning-light); color: #92400e; }
-.status-badge--danger { background: var(--danger-light); color: #991b1b; }
-.status-badge--info { background: rgba(59,130,246,.1); color: #1d4ed8; }
-[data-theme="dark"] .status-badge--success { background: rgba(16,185,129,.2); color: #6ee7b7; }
-[data-theme="dark"] .status-badge--warning { background: rgba(245,158,11,.2); color: #fcd34d; }
-[data-theme="dark"] .status-badge--danger { background: rgba(239,68,68,.2); color: #fca5a5; }
-[data-theme="dark"] .status-badge--info { background: rgba(59,130,246,.2); color: #93c5fd; }
-
-/* ============ ALERT VARIANTS ============ */
-.alert--info { background: rgba(59,130,246,.08); color: #1d4ed8; border: 1px solid rgba(59,130,246,.2); }
-.alert--warning { background: var(--warning-light); color: #92400e; border: 1px solid rgba(245,158,11,.3); }
-[data-theme="dark"] .alert--info { background: rgba(59,130,246,.12); color: #93c5fd; border-color: rgba(59,130,246,.25); }
-[data-theme="dark"] .alert--warning { background: rgba(245,158,11,.12); color: #fcd34d; border-color: rgba(245,158,11,.25); }
-
-/* ============ FUND CARDS ============ */
-.funds-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem; }
-.fund-card { padding: 1.25rem; transition: all .3s; }
-.fund-card:hover { transform: translateY(-3px); }
-.fund-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: .75rem; gap: .5rem; flex-wrap: wrap; }
-.fund-cat-badge { display: inline-flex; padding: .25rem .6rem; border-radius: 20px; font-size: .75rem; font-weight: 600; }
-.fund-overdue-badge { background: var(--danger-light); color: #991b1b; padding: .2rem .5rem; border-radius: 12px; font-size: .7rem; font-weight: 600; }
-.fund-completed-badge { background: var(--success-light); color: #065f46; padding: .2rem .5rem; border-radius: 12px; font-size: .7rem; font-weight: 600; }
-[data-theme="dark"] .fund-overdue-badge { background: rgba(239,68,68,.2); color: #fca5a5; }
-[data-theme="dark"] .fund-completed-badge { background: rgba(16,185,129,.2); color: #6ee7b7; }
-.fund-name { font-size: 1.1rem; font-weight: 700; margin-bottom: .25rem; }
-.fund-description { font-size: .8rem; color: var(--text-secondary); margin-bottom: .75rem; line-height: 1.4; }
-.fund-stats-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .5rem; margin-bottom: .75rem; }
-.fund-stat { text-align: center; padding: .5rem; background: var(--bg-input); border-radius: var(--radius-sm); }
-.fund-stat-label { display: block; font-size: .65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .3px; font-weight: 600; }
-.fund-stat-value { display: block; font-size: .95rem; font-weight: 700; margin-top: .1rem; }
-.fund-progress { height: 8px; background: var(--bg-input); border-radius: 4px; overflow: hidden; margin-bottom: .3rem; }
-.fund-progress-bar { height: 100%; border-radius: 4px; transition: width .8s ease; min-width: 2px; }
-.fund-progress-info { display: flex; justify-content: space-between; font-size: .7rem; color: var(--text-muted); margin-bottom: .5rem; }
-.fund-meta-row { display: flex; justify-content: space-between; font-size: .75rem; color: var(--text-secondary); margin-bottom: .75rem; padding-top: .5rem; border-top: 1px solid var(--border); }
-.fund-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
-
-/* ============ STATS GRID 3 COLS ============ */
-.stats-grid--3 { grid-template-columns: repeat(3, 1fr); }
-@media (max-width: 768px) {
+  /* Stats cards - 2 columns */
+  .stats-grid { grid-template-columns: 1fr 1fr; gap: .6rem; }
+  .stats-grid--2 { grid-template-columns: 1fr 1fr; }
   .stats-grid--3 { grid-template-columns: 1fr 1fr; }
+  .stats-card { padding: .85rem .7rem; gap: .5rem; }
+  .stats-card__icon { font-size: 1.4rem; }
+  .stats-card__value { font-size: 1.1rem; word-break: break-all; }
+  .stats-card__label { font-size: .7rem; }
+  .stats-card__sub { font-size: .65rem; }
+
+  /* Dashboard */
+  .dashboard-row { grid-template-columns: 1fr; gap: .75rem; }
+  .flat-status-bars { padding: 1rem; }
+  .quick-stats { padding: 1rem; gap: .75rem; grid-template-columns: 1fr 1fr; }
+  .chart-container { padding: 1rem; }
+  .expense-breakdown { padding: .75rem; }
+
+  /* Cards */
+  .card { overflow: hidden; }
+  .card-header { padding: .85rem 1rem; }
+  .card-title { font-size: .9rem; }
+
+  /* Tables */
+  .table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .table thead th { padding: .5rem .4rem; font-size: .68rem; white-space: nowrap; }
+  .table tbody td { padding: .5rem .4rem; font-size: .78rem; }
+
+  /* Grids */
+  .blocks-grid { grid-template-columns: 1fr; }
+  .block-card { padding: 1rem; }
+  .flat-detail-grid { grid-template-columns: 1fr; }
   .verification-grid { grid-template-columns: 1fr; }
   .funds-grid { grid-template-columns: 1fr; }
+  .floor-grid { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); }
+
+  /* Forms */
+  .form-row, .form-row--3 { grid-template-columns: 1fr; }
+  .filters-bar { gap: .5rem; }
+  .filter-group { flex-wrap: wrap; width: 100%; }
+  .filter-select { min-width: 100px; font-size: .8rem; }
+  .filter-tabs { gap: .3rem; }
+  .filter-tab { padding: .4rem .7rem; font-size: .78rem; }
+
+  /* Buttons */
+  .btn-group { gap: .4rem; flex-wrap: wrap; }
+
+  /* Payment summary */
+  .payment-summary { grid-template-columns: repeat(3, 1fr); gap: .5rem; }
+  .payment-summary-item { padding: .85rem .5rem; }
+  .psi-value { font-size: 1.1rem; word-break: break-all; }
+  .psi-label { font-size: .65rem; }
+
+  /* Report */
+  .report-summary { grid-template-columns: 1fr 1fr; }
+  .report-tabs { gap: .3rem; overflow-x: auto; flex-wrap: nowrap; padding-bottom: .25rem; -webkit-overflow-scrolling: touch; }
+  .report-tab { white-space: nowrap; flex-shrink: 0; }
+
+  /* Modals */
+  .modal { max-width: 95vw !important; }
+  .modal-overlay { padding: .5rem; }
+  .modal-header { padding: 1rem; }
+  .modal-body { padding: 1rem; }
+  .modal-actions { flex-wrap: wrap; }
+  .modal-actions .btn { flex: 1; min-width: 0; }
+
+  /* Alerts */
+  .alert { font-size: .8rem; padding: .6rem .7rem; }
+
+  /* Auth */
+  .auth-card { padding: 1.5rem; }
+
+  /* Fund cards */
+  .fund-stats-row { gap: .3rem; }
+  .fund-stat-value { font-size: .8rem; }
+  .fund-stat-label { font-size: .6rem; }
+  .fund-name { font-size: 1rem; }
+
+  /* Verification cards */
+  .vc-header { gap: .4rem; }
+  .vc-details { padding: .6rem; }
+  .vc-value { font-size: .8rem; word-break: break-all; }
+  .vc-amount { font-size: 1rem; }
+  .vc-actions { flex-wrap: wrap; }
+
+  /* Expense cards */
+  .expense-card { flex-wrap: wrap; gap: .5rem; padding: .75rem; }
+  .expense-card__icon { width: 38px; height: 38px; font-size: 1.3rem; }
+
+  /* Notifications */
+  .notification-card { gap: .5rem; padding: .7rem; }
+  .notification-icon { width: 36px; height: 36px; font-size: 1.1rem; }
+  .notification-title { font-size: .85rem; }
+  .notification-message { font-size: .75rem; }
+
+  /* Misc */
+  .summary-stats { grid-template-columns: 1fr 1fr; }
+  .info-row { flex-wrap: wrap; gap: .2rem; }
+  .settings-form { padding: 1rem; }
+  .payment-info-box { padding: .7rem; font-size: .8rem; }
+  .breadcrumb { font-size: .78rem; flex-wrap: wrap; }
+  .tab-group { gap: .3rem; }
+  .tab { padding: .35rem .55rem; font-size: .75rem; }
+  .category-pills { gap: .25rem; }
+  .empty-state { padding: 2.5rem 1rem; }
 }
+
+/* Small Mobile (480px) */
 @media (max-width: 480px) {
+  .page { padding: .65rem .5rem; }
+  .page-title { font-size: 1.1rem; }
+  .page-header { flex-direction: column; align-items: stretch; gap: .5rem; }
+  .page-header .btn-group { justify-content: stretch; }
+  .page-header .btn-group .btn { flex: 1; }
+  .page-header .btn { width: 100%; }
+
+  /* Stats 2col but smaller */
+  .stats-grid { grid-template-columns: 1fr 1fr; gap: .4rem; }
   .stats-grid--3 { grid-template-columns: 1fr; }
+  .stats-card { padding: .65rem .5rem; gap: .4rem; }
+  .stats-card__icon { font-size: 1.2rem; }
+  .stats-card__value { font-size: .95rem; }
+  .stats-card__label { font-size: .65rem; }
+
+  /* Charts */
+  .bar-chart { height: 120px; }
+
+  /* Filters - stack */
+  .filters-bar { flex-direction: column; align-items: stretch; }
+  .filter-tabs { overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; padding-bottom: .2rem; }
+  .filter-tab { white-space: nowrap; flex-shrink: 0; padding: .35rem .6rem; font-size: .73rem; }
+
+  /* Alerts stack */
+  .alert { flex-direction: column !important; gap: .4rem !important; align-items: flex-start !important; }
+
+  /* Payment summary */
+  .payment-summary { grid-template-columns: repeat(3, 1fr); gap: .35rem; }
+  .psi-value { font-size: .95rem; }
+  .psi-label { font-size: .6rem; }
+
+  /* Report */
+  .report-summary { grid-template-columns: 1fr; }
+  .rs-value { font-size: 1rem; word-break: break-all; }
+
+  /* Tables even smaller */
+  .table thead th { padding: .4rem .25rem; font-size: .62rem; }
+  .table tbody td { padding: .4rem .25rem; font-size: .72rem; }
+
+  /* Buttons */
+  .btn { padding: .5rem .85rem; font-size: .82rem; }
+  .btn--sm { padding: .3rem .5rem; font-size: .72rem; }
+  .btn--lg { padding: .6rem .9rem; font-size: .85rem; }
+  .btn-group { gap: .3rem; }
+
+  /* Flat grid */
+  .flat-grid { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); }
+
+  /* Fund */
+  .fund-stats-row { gap: .2rem; }
+  .fund-stat { padding: .3rem; }
+  .fund-stat-value { font-size: .72rem; }
+
+  /* Modal tighter */
+  .modal-body { padding: .75rem; }
+  .modal-header { padding: .75rem; }
+  .modal-title { font-size: .95rem; }
+
+  /* Expense */
+  .expense-info { min-width: 70px; }
+  .expense-amount { min-width: 50px; font-size: .72rem; }
+
+  /* Empty state */
+  .empty-state { padding: 2rem 1rem; }
+  .empty-icon { font-size: 3rem; }
+  .empty-state h2 { font-size: 1rem; }
+
+  /* Notification */
+  .notification-card { padding: .6rem; }
+  .notification-icon { width: 32px; height: 32px; font-size: 1rem; }
 }
 
-/* ============ BTN DANGER VARIANT ============ */
-.btn--danger { background: var(--danger); color: #fff; }
-.btn--danger:hover { background: #dc2626; }
+/* Ultra Small (360px and below) */
+@media (max-width: 360px) {
+  .page { padding: .4rem; }
+  .page-title { font-size: 1rem; }
+  .stats-grid { gap: .3rem; }
+  .stats-card { padding: .5rem .4rem; gap: .3rem; }
+  .stats-card__icon { font-size: 1rem; }
+  .stats-card__value { font-size: .85rem; }
+  .stats-card__label { font-size: .6rem; }
+  .btn { padding: .4rem .65rem; font-size: .78rem; }
+  .btn--sm { padding: .25rem .4rem; font-size: .68rem; }
+  .card-header { padding: .65rem; }
+  .card-title { font-size: .82rem; }
+  .table thead th { font-size: .58rem; padding: .3rem .2rem; }
+  .table tbody td { font-size: .65rem; padding: .3rem .2rem; }
+  .fund-card { padding: .75rem; }
+  .fund-name { font-size: .88rem; }
+}
 
-/* ============ GLOBAL MOBILE OVERFLOW PREVENTION ============ */
-#root { overflow-x: hidden; width: 100%; }
+/* ========== BOTTOM NAV ========== */
+.bottom-nav {
+  display: none;
+  position: fixed; bottom: 0; left: 0; right: 0;
+  height: 58px; background: var(--bg-card);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid var(--border); z-index: 1000;
+  justify-content: space-around; align-items: center;
+  padding: 0 .25rem; padding-bottom: env(safe-area-inset-bottom);
+  box-shadow: 0 -2px 10px rgba(0,0,0,.08);
+}
+.bottom-nav-item {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 2px; color: var(--text-secondary); text-decoration: none;
+  font-size: .62rem; font-weight: 500; flex: 1; height: 100%; min-width: 0; overflow: hidden;
+}
+.bottom-nav-item.active { color: var(--primary); }
+.bottom-nav-icon { font-size: 1.25rem; }
+.bottom-nav-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+@media (max-width: 768px) {
+  .bottom-nav { display: flex; }
+  .main-content { padding-bottom: 68px; }
+  .sidebar { display: none; }
+}
 
-/* ============ MEMBER REQUESTS - TAB GROUP & TABLE ============ */
+/* ========== PREMIUM CARD ========== */
+.premium-card {
+  background: var(--surface); border-radius: 20px; border: 1px solid var(--border);
+  box-shadow: var(--shadow-lg); overflow: hidden; transition: all .3s cubic-bezier(.4,0,.2,1);
+}
+.premium-card:hover { transform: translateY(-5px); box-shadow: 0 20px 25px -5px rgba(0,0,0,.1); }
+
+/* ========== GLOBAL OVERFLOW FIX ========== */
+#root { overflow-x: hidden; width: 100%; max-width: 100vw; }
+
+/* ========== MEMBER REQUESTS ========== */
 .tab-group { display: flex; gap: .4rem; flex-wrap: wrap; }
 .tab { padding: .4rem .8rem; border: 1px solid var(--border); background: var(--bg-card); border-radius: 20px; font-size: .8rem; cursor: pointer; transition: all .2s; color: var(--text); }
 .tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
@@ -696,159 +745,3 @@ table, .table { width: 100%; border-collapse: collapse; }
 .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .loader-container { display: flex; justify-content: center; padding: 3rem; }
 
-/* ============ ALL-PAGE MOBILE FIXES ============ */
-@media (max-width: 768px) {
-  /* Settings invite box */
-  .invite-box { width: 100% !important; }
-  .page-header .invite-box { margin-top: 0.5rem; }
-  
-  /* Fund cards mobile */
-  .fund-stats-row { grid-template-columns: 1fr 1fr 1fr; gap: .35rem; }
-  .fund-stat-value { font-size: .8rem; }
-  .fund-stat-label { font-size: .6rem; }
-  .fund-name { font-size: 1rem; }
-  .fund-description { font-size: .75rem; }
-  .fund-actions { flex-wrap: wrap; }
-  
-  /* Verification cards */
-  .vc-header { gap: .4rem; }
-  .vc-flat-number { font-size: .95rem; }
-  .vc-actions { flex-wrap: wrap; }
-  .vc-details { padding: .6rem; }
-  .vc-detail-row { gap: .3rem; }
-  .vc-value { font-size: .8rem; word-break: break-all; }
-  .vc-amount { font-size: 1rem; }
-  
-  /* Payment summary */
-  .payment-summary-item { padding: 1rem; }
-  .psi-value { font-size: 1.2rem; word-break: break-all; }
-  
-  /* Report summary */
-  .report-summary-card { padding: 1rem; }
-  .rs-value { font-size: 1.15rem; word-break: break-all; }
-  .report-tabs { gap: .35rem; overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap; padding-bottom: .25rem; }
-  .report-tab { white-space: nowrap; flex-shrink: 0; }
-  
-  /* Expense cards */
-  .expense-card { gap: .6rem; padding: .85rem; }
-  .expense-card__icon { width: 40px; height: 40px; font-size: 1.4rem; }
-  .expense-card__title { font-size: .85rem; }
-  .expense-card__amount { font-size: .9rem; }
-  
-  /* Notification cards */
-  .notification-card { gap: .6rem; padding: .75rem; }
-  .notification-icon { width: 38px; height: 38px; font-size: 1.2rem; }
-  .notification-title { font-size: .85rem; }
-  .notification-message { font-size: .75rem; }
-  
-  /* Block cards */
-  .block-card { padding: 1rem; }
-  .block-card__name { font-size: 1.1rem; }
-  .block-card__progress { width: 50px; height: 50px; }
-  .progress-ring { width: 50px; height: 50px; }
-  
-  /* Flat detail grid */
-  .info-row { flex-wrap: wrap; gap: .2rem; }
-  .info-value { word-break: break-all; text-align: right; }
-  .summary-value { font-size: 1.1rem; word-break: break-all; }
-  
-  /* Modals */
-  .modal { max-width: 95vw !important; margin: 0.5rem; }
-  .modal-overlay { padding: 0.5rem; }
-  .modal-header { padding: 1rem; }
-  .modal-body { padding: 1rem; }
-  .modal-actions { flex-wrap: wrap; }
-  .modal-actions .btn { flex: 1; min-width: 0; }
-  
-  /* Tables - smaller text */
-  .table thead th { padding: .5rem .4rem; font-size: .68rem; white-space: nowrap; }
-  .table tbody td { padding: .5rem .4rem; font-size: .78rem; }
-  
-  /* Flat grid cells */
-  .floor-sections div[style*="gridTemplateColumns"] { 
-    grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)) !important; 
-    gap: 0.5rem !important;
-  }
-  
-  /* Filters */
-  .filters-bar { gap: .5rem; }
-  .filter-select { min-width: 100px; font-size: .8rem; padding: .4rem .5rem; }
-  .filter-group { flex-wrap: wrap; width: 100%; }
-  
-  /* Member requests */
-  .tab-group { gap: .3rem; }
-  .tab { padding: .35rem .6rem; font-size: .75rem; }
-  
-  /* Payment info box */
-  .payment-info-box { padding: .75rem; font-size: .8rem; }
-  
-  /* Settings */
-  .settings-form { padding: 1rem; }
-  .card-title { font-size: .9rem; }
-  
-  /* Breadcrumb */
-  .breadcrumb { font-size: .8rem; flex-wrap: wrap; }
-}
-
-@media (max-width: 480px) {
-  /* Fund grid smaller */
-  .fund-stats-row { grid-template-columns: 1fr 1fr 1fr; gap: .25rem; }
-  .fund-stat { padding: .35rem; }
-  .fund-stat-value { font-size: .75rem; }
-  
-  /* Even smaller table */
-  .table thead th { padding: .4rem .3rem; font-size: .65rem; }
-  .table tbody td { padding: .4rem .3rem; font-size: .72rem; }
-  
-  /* Smaller flat grid */
-  .floor-sections div[style*="gridTemplateColumns"] { 
-    grid-template-columns: repeat(auto-fill, minmax(55px, 1fr)) !important; 
-    gap: 0.4rem !important;
-  }
-  
-  /* Flat detail */
-  .info-label { font-size: .75rem; }
-  .info-value { font-size: .8rem; }
-  
-  /* Modal tighter */
-  .modal-body { padding: 0.75rem; }
-  .modal-header { padding: 0.75rem; }
-  .modal-title { font-size: 1rem; }
-  
-  /* Filter tabs scrollable */
-  .filter-tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap; padding-bottom: .25rem; }
-  .filter-tab { white-space: nowrap; flex-shrink: 0; padding: .35rem .6rem; font-size: .75rem; }
-  
-  /* Buttons smaller */
-  .btn { padding: .5rem 1rem; font-size: .85rem; }
-  .btn--lg { padding: .65rem 1rem; font-size: .9rem; }
-  .btn-group { gap: .3rem; }
-  
-  /* Empty state */
-  .empty-state { padding: 2rem 1rem; }
-  .empty-icon { font-size: 3rem; }
-  .empty-state h2 { font-size: 1.1rem; }
-  
-  /* Notification */
-  .notification-card { padding: .65rem; }
-  .notification-icon { width: 34px; height: 34px; font-size: 1rem; }
-}
-
-@media (max-width: 360px) {
-  /* Ultra small devices */
-  .fund-card { padding: 0.85rem; }
-  .fund-name { font-size: .9rem; }
-  .fund-stat-value { font-size: .7rem; }
-  
-  .btn { padding: .4rem .75rem; font-size: .8rem; }
-  .btn--sm { padding: .25rem .5rem; font-size: .7rem; }
-  
-  .card-header { padding: .75rem; }
-  .card-title { font-size: .85rem; }
-  
-  .table thead th { font-size: .6rem; padding: .35rem .25rem; }
-  .table tbody td { font-size: .68rem; padding: .35rem .25rem; }
-  
-  .report-tabs { gap: .25rem; }
-  .report-tab { padding: .35rem .6rem; font-size: .75rem; }
-}
