@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
 const Payment = require('../models/Payment');
 const Flat = require('../models/Flat');
 const Society = require('../models/Society');
@@ -12,52 +13,98 @@ const { emitToSociety } = require('../services/socketService');
 // Record payment
 router.post('/', auth, adminOnly, async (req, res) => {
   try {
-    const { flatId, societyId, amount, paidAmount, month, year, paymentMethod, transactionId, notes, lateFee } = req.body;
+    let { flatId, societyId, amount, paidAmount, month, year, paymentMethod, transactionId, notes, lateFee } = req.body;
+    
+    // Explicitly cast to correct types
+    const mMonth = parseInt(month);
+    const mYear = parseInt(year);
+    const mPaidAmount = parseFloat(paidAmount) || 0;
+    const mAmount = parseFloat(amount) || 0;
+    const mLateFee = parseFloat(lateFee) || 0;
 
-    let status = 'pending';
-    const totalAmount = amount + (lateFee || 0);
-    if (paidAmount >= totalAmount) status = 'paid';
-    else if (paidAmount > 0) status = 'partial';
+    console.log(`[Payment] Processing manual payment for Flat: ${flatId}, Month: ${mMonth}, Year: ${mYear}, Amount: ${mPaidAmount}`);
 
-    const payment = new Payment({
-      flatId, societyId, amount, paidAmount: paidAmount || 0,
-      month, year, status,
-      paymentMethod: paymentMethod || 'cash',
-      transactionId, notes,
-      lateFee: lateFee || 0,
-      paidDate: paidAmount > 0 ? new Date() : null,
-      dueDate: new Date(year, month - 1, 15),
-      recordedBy: req.user._id
-    });
+    // Check if a payment record already exists for this flat, month, and year
+    // Using standard mongoose ObjectId casting
+    const fId = new mongoose.Types.ObjectId(flatId);
+    
+    let payment = await Payment.findOne({ flatId: fId, month: mMonth, year: mYear });
+    let isNew = false;
 
-    await payment.save();
+    if (payment) {
+      console.log(`[Payment] Found existing record: ${payment._id}. Updating...`);
+      // Update existing record
+      payment.paidAmount += mPaidAmount;
+      payment.paymentMethod = paymentMethod || payment.paymentMethod;
+      payment.transactionId = transactionId || payment.transactionId;
+      if (notes) payment.notes = `${payment.notes}\n${notes}`;
+      if (lateFee !== undefined) payment.lateFee = mLateFee;
+      
+      const totalRequired = payment.amount + payment.lateFee;
+      if (payment.paidAmount >= totalRequired) payment.status = 'paid';
+      else if (payment.paidAmount > 0) payment.status = 'partial';
+      
+      if (mPaidAmount > 0) payment.paidDate = new Date();
+      await payment.save();
+    } else {
+      console.log(`[Payment] No existing record. Creating new one.`);
+      // Create new record
+      isNew = true;
+      let status = 'pending';
+      const totalRequired = mAmount + mLateFee;
+      if (mPaidAmount >= totalRequired) status = 'paid';
+      else if (mPaidAmount > 0) status = 'partial';
+
+      payment = new Payment({
+        flatId: fId, 
+        societyId: new mongoose.Types.ObjectId(societyId), 
+        amount: mAmount, 
+        paidAmount: mPaidAmount,
+        month: mMonth, 
+        year: mYear, 
+        status,
+        paymentMethod: paymentMethod || 'cash',
+        transactionId, 
+        notes,
+        lateFee: mLateFee,
+        paidDate: mPaidAmount > 0 ? new Date() : null,
+        dueDate: new Date(mYear, mMonth - 1, 15),
+        recordedBy: req.user._id
+      });
+
+      await payment.save();
+    }
+
+    const monthName = new Date(mYear, mMonth - 1).toLocaleString('default', { month: 'long' });
 
     // Real-time update via Socket.io
     emitToSociety(societyId, 'payment_recorded', { 
       payment, 
       flatId,
-      message: `Payment of ₹${paidAmount} recorded for ${monthName} ${year}`
+      message: `Payment of ₹${mPaidAmount} recorded for ${monthName} ${mYear}`
     });
 
     // Notify flat owner
-    const monthName = new Date(year, month - 1).toLocaleString('default', { month: 'long' });
-    await notifyFlatOwner({
+    notifyFlatOwner({
       flatId,
       societyId,
       title: 'Payment Recorded',
-      message: `A payment of ₹${paidAmount} has been recorded for ${monthName} ${year}.`,
+      message: `A payment of ₹${mPaidAmount} has been recorded for ${monthName} ${mYear}.`,
       type: 'success'
-    });
+    }).catch(e => console.error('Notification error:', e));
 
 
-    // Update flat's current month status
+    // Update flat's current month status if it's the current month
     const now = new Date();
-    if (month === now.getMonth() + 1 && year === now.getFullYear()) {
-      await Flat.findByIdAndUpdate(flatId, { currentMonthStatus: status });
+    if (mMonth === now.getMonth() + 1 && mYear === now.getFullYear()) {
+      console.log(`[Payment] Updating Flat ${flatId} status to ${payment.status}`);
+      await Flat.findByIdAndUpdate(flatId, { currentMonthStatus: payment.status });
     }
 
-    res.status(201).json(payment);
+    console.log(`[Payment] Success! Record ${isNew ? 'Created' : 'Updated'}.`);
+    res.status(isNew ? 201 : 200).json(payment);
   } catch (error) {
+    console.error('Payment Recording Error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });

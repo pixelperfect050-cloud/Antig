@@ -97,7 +97,8 @@ const Payments = () => {
       });
       setShowManualModal(true);
     } catch (err) {
-      alert(err.message);
+      const errorMsg = err.response?.data?.error || err.response?.data?.message || err.message;
+      alert(`[v1.1.3] Error: ${errorMsg}`);
     }
   };
 
@@ -106,7 +107,8 @@ const Payments = () => {
       const data = await api.get(`/api/flats/block/${blockId}`);
       setFlats(data);
     } catch (err) {
-      console.error(err);
+      const errorMsg = err.response?.data?.error || err.response?.data?.message || err.message;
+      alert(`[v1.1.3] Error: ${errorMsg}`);
     }
   };
 
@@ -123,7 +125,8 @@ const Payments = () => {
       setShowBillModal(false);
       fetchPayments();
     } catch (err) {
-      alert(err.message);
+      const errorMsg = err.response?.data?.error || err.response?.data?.message || err.message;
+      alert(`[v1.1.3] Error: ${errorMsg}`);
     } finally {
       setSaving(false);
     }
@@ -150,7 +153,8 @@ const Payments = () => {
       alert('Payment recorded successfully!');
       fetchPayments();
     } catch (err) {
-      alert(err.message);
+      const errorMsg = err.response?.data?.error || err.response?.data?.message || err.message;
+      alert(`[v1.1.3] Error: ${errorMsg}`);
     } finally {
       setSaving(false);
     }

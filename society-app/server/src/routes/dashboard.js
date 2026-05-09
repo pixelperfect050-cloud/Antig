@@ -18,13 +18,30 @@ router.get('/stats/:societyId', auth, async (req, res) => {
     const currentMonth = now.getMonth() + 1;
     const currentYear = now.getFullYear();
 
-    // Total collection (all time)
+    // Total collection (all time) - Maintenance + Funds
     const allPayments = await Payment.find({ societyId });
-    const totalCollection = allPayments.reduce((sum, p) => sum + p.paidAmount, 0);
+    const allFundPayments = await FundPayment.find({ societyId, status: 'paid' });
+    
+    const maintenanceCollection = allPayments.reduce((sum, p) => sum + p.paidAmount, 0);
+    const fundCollection = allFundPayments.reduce((sum, p) => sum + p.paidAmount, 0);
+    const totalCollection = maintenanceCollection + fundCollection;
 
-    // This month collection
+    // This month collection (Maintenance + Funds)
     const monthPayments = await Payment.find({ societyId, month: currentMonth, year: currentYear });
-    const monthCollection = monthPayments.reduce((sum, p) => sum + p.paidAmount, 0);
+    
+    // Monthly Fund Collections
+    const monthStart = new Date(currentYear, currentMonth - 1, 1);
+    const monthEnd = new Date(currentYear, currentMonth, 0);
+    const monthFundPayments = await FundPayment.find({
+      societyId,
+      status: 'paid',
+      updatedAt: { $gte: monthStart, $lte: monthEnd }
+    });
+
+    const maintMonthColl = monthPayments.reduce((sum, p) => sum + p.paidAmount, 0);
+    const fundMonthColl = monthFundPayments.reduce((sum, p) => sum + p.paidAmount, 0);
+    
+    const monthCollection = maintMonthColl + fundMonthColl;
     const monthDue = monthPayments.reduce((sum, p) => sum + (p.amount - p.paidAmount), 0);
 
     // Total expenses
@@ -32,8 +49,6 @@ router.get('/stats/:societyId', auth, async (req, res) => {
     const totalExpenses = allExpenses.reduce((sum, e) => sum + e.amount, 0);
 
     // This month expenses
-    const monthStart = new Date(currentYear, currentMonth - 1, 1);
-    const monthEnd = new Date(currentYear, currentMonth, 0);
     const monthExpenses = await Expense.find({
       societyId,
       date: { $gte: monthStart, $lte: monthEnd }
@@ -63,7 +78,18 @@ router.get('/stats/:societyId', auth, async (req, res) => {
       const m = d.getMonth() + 1;
       const y = d.getFullYear();
       const payments = await Payment.find({ societyId, month: m, year: y });
-      const collected = payments.reduce((sum, p) => sum + p.paidAmount, 0);
+      
+      // Monthly Fund Collections for trend
+      const trendMonthStart = new Date(y, m - 1, 1);
+      const trendMonthEnd = new Date(y, m, 0);
+      const fundPayments = await FundPayment.find({
+        societyId,
+        status: 'paid',
+        updatedAt: { $gte: trendMonthStart, $lte: trendMonthEnd }
+      });
+
+      const collected = payments.reduce((sum, p) => sum + p.paidAmount, 0) + 
+                        fundPayments.reduce((sum, p) => sum + p.paidAmount, 0);
       const due = payments.reduce((sum, p) => sum + (p.amount - p.paidAmount), 0);
       monthlyTrend.push({
         month: m,
