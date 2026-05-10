@@ -1,19 +1,7 @@
 {
   "rewrites": [
     {
-      "source": "/api/:path*",
-      "destination": "https://antig-backend-y4uy.onrender.com/api/:path*"
-    },
-    {
-      "source": "/uploads/:path*",
-      "destination": "https://antig-backend-y4uy.onrender.com/uploads/:path*"
-    },
-    {
-      "source": "/socket.io/:path*",
-      "destination": "https://antig-backend-y4uy.onrender.com/socket.io/:path*"
-    },
-    {
-      "source": "/((?!api|uploads|socket\\.io).*)",
+      "source": "/((?!api|assets|uploads|socket\\.io).*)",
       "destination": "/index.html"
     }
   ]
