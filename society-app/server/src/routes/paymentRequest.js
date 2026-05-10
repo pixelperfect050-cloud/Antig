@@ -168,9 +168,13 @@ router.put('/:id/review', auth, adminOnly, async (req, res) => {
       }
 
       // Update flat current month status
-      const now = new Date();
-      if (payment.month === now.getMonth() + 1 && payment.year === now.getFullYear()) {
-        await Flat.findByIdAndUpdate(request.flatId, { currentMonthStatus: payment.status });
+      try {
+        const now = new Date();
+        if (payment.month === (now.getMonth() + 1) && payment.year === now.getFullYear()) {
+          await Flat.findByIdAndUpdate(request.flatId, { currentMonthStatus: payment.status });
+        }
+      } catch (flatErr) {
+        console.error('[PaymentRequest] flat status update error:', flatErr.message);
       }
 
       request.paymentId = payment._id;

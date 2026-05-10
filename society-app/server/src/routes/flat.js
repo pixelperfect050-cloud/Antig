@@ -33,7 +33,7 @@ router.get('/:id', auth, async (req, res) => {
     if (!flat) return res.status(404).json({ message: 'Flat not found' });
 
     const payments = await Payment.find({ flatId: flat._id })
-      .sort({ year: -1, month: -1 })
+      .sort({ createdAt: -1 })
       .limit(24);
 
     const totalPaid = payments.reduce((sum, p) => sum + p.paidAmount, 0);

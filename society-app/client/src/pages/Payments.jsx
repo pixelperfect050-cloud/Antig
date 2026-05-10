@@ -138,7 +138,7 @@ const Payments = () => {
     setSaving(true);
     try {
       const sid = user?.societyId?._id || user?.societyId;
-      await api.post('/api/payments', {
+      const result = await api.post('/api/payments', {
         flatId: manualForm.flatId,
         societyId: sid,
         amount: parseFloat(manualForm.amount),
@@ -150,11 +150,11 @@ const Payments = () => {
         notes: manualForm.notes
       });
       setShowManualModal(false);
-      alert('Payment recorded successfully!');
+      alert('✅ Payment recorded successfully!');
       fetchPayments();
     } catch (err) {
-      const errorMsg = err.response?.data?.error || err.response?.data?.message || err.message;
-      alert(`[v1.1.3] Error: ${errorMsg}`);
+      console.error('Manual payment error:', err);
+      alert(`Error: ${err.message || 'Something went wrong'}`);
     } finally {
       setSaving(false);
     }

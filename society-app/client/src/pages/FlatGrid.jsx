@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useSocket } from '../context/SocketContext';
 import api from '../utils/api';
 
 const FlatGrid = () => {
   const { blockId } = useParams();
   const navigate = useNavigate();
+  const socket = useSocket();
   const [flats, setFlats] = useState([]);
   const [block, setBlock] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -13,6 +15,19 @@ const FlatGrid = () => {
   useEffect(() => {
     fetchData();
   }, [blockId]);
+
+  // Real-time refresh when payments change
+  useEffect(() => {
+    if (socket) {
+      const refresh = () => fetchData();
+      socket.on('payment_recorded', refresh);
+      socket.on('payment_approved', refresh);
+      return () => {
+        socket.off('payment_recorded', refresh);
+        socket.off('payment_approved', refresh);
+      };
+    }
+  }, [socket]);
 
   const fetchData = async () => {
     try {

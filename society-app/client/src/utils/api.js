@@ -9,8 +9,14 @@ const getHeaders = () => {
 };
 
 const handleResponse = async (res) => {
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || 'Something went wrong');
+  let data;
+  try {
+    data = await res.json();
+  } catch (parseErr) {
+    if (res.ok) return {}; // Response was OK but no JSON body
+    throw new Error(`Server error (status ${res.status})`);
+  }
+  if (!res.ok) throw new Error(data.message || `Server error (status ${res.status})`);
   return data;
 };
 

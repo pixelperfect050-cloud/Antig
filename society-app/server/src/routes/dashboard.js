@@ -170,7 +170,7 @@ router.get('/member-stats', auth, async (req, res) => {
     }
 
     const payments = await Payment.find({ flatId: req.user.flatId })
-      .sort({ year: -1, month: -1 })
+      .sort({ createdAt: -1 })
       .limit(12);
 
     const totalPaid = payments.reduce((sum, p) => sum + p.paidAmount, 0);

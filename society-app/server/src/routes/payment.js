@@ -10,11 +10,16 @@ const { generatePaymentReceipt } = require('../utils/pdfGenerator');
 const { emitToSociety } = require('../services/socketService');
 
 
-// Record payment
+// Record payment (Manual Entry by Admin)
 router.post('/', auth, adminOnly, async (req, res) => {
   try {
     let { flatId, societyId, amount, paidAmount, month, year, paymentMethod, transactionId, notes, lateFee } = req.body;
     
+    // Validate required fields
+    if (!flatId || !societyId) {
+      return res.status(400).json({ message: 'Flat ID and Society ID are required' });
+    }
+
     // Explicitly cast to correct types
     const mMonth = parseInt(month);
     const mYear = parseInt(year);
@@ -22,37 +27,43 @@ router.post('/', auth, adminOnly, async (req, res) => {
     const mAmount = parseFloat(amount) || 0;
     const mLateFee = parseFloat(lateFee) || 0;
 
+    if (isNaN(mMonth) || isNaN(mYear) || mMonth < 1 || mMonth > 12) {
+      return res.status(400).json({ message: 'Invalid month or year' });
+    }
+
     console.log(`[Payment] Processing manual payment for Flat: ${flatId}, Month: ${mMonth}, Year: ${mYear}, Amount: ${mPaidAmount}`);
 
     // Check if a payment record already exists for this flat, month, and year
-    // Using standard mongoose ObjectId casting
-    const fId = new mongoose.Types.ObjectId(flatId);
-    
+    let fId;
+    try {
+      fId = new mongoose.Types.ObjectId(flatId);
+    } catch (e) {
+      return res.status(400).json({ message: 'Invalid flat ID format' });
+    }
+
     let payment = await Payment.findOne({ flatId: fId, month: mMonth, year: mYear });
     let isNew = false;
 
     if (payment) {
-      console.log(`[Payment] Found existing record: ${payment._id}. Updating...`);
-      // Update existing record
+      console.log(`[Payment] Updating existing record: ${payment._id}`);
       payment.paidAmount += mPaidAmount;
       payment.paymentMethod = paymentMethod || payment.paymentMethod;
       payment.transactionId = transactionId || payment.transactionId;
-      if (notes) payment.notes = `${payment.notes}\n${notes}`;
+      if (notes) payment.notes = payment.notes ? `${payment.notes}\n${notes}` : notes;
       if (lateFee !== undefined) payment.lateFee = mLateFee;
       
-      const totalRequired = payment.amount + payment.lateFee;
+      const totalRequired = (payment.amount || 0) + (payment.lateFee || 0);
       if (payment.paidAmount >= totalRequired) payment.status = 'paid';
       else if (payment.paidAmount > 0) payment.status = 'partial';
       
       if (mPaidAmount > 0) payment.paidDate = new Date();
       await payment.save();
     } else {
-      console.log(`[Payment] No existing record. Creating new one.`);
-      // Create new record
+      console.log(`[Payment] Creating new record for flat: ${flatId}`);
       isNew = true;
       let status = 'pending';
       const totalRequired = mAmount + mLateFee;
-      if (mPaidAmount >= totalRequired) status = 'paid';
+      if (mPaidAmount >= totalRequired && mPaidAmount > 0) status = 'paid';
       else if (mPaidAmount > 0) status = 'partial';
 
       payment = new Payment({
@@ -64,8 +75,8 @@ router.post('/', auth, adminOnly, async (req, res) => {
         year: mYear, 
         status,
         paymentMethod: paymentMethod || 'cash',
-        transactionId, 
-        notes,
+        transactionId: transactionId || '', 
+        notes: notes || '',
         lateFee: mLateFee,
         paidDate: mPaidAmount > 0 ? new Date() : null,
         dueDate: new Date(mYear, mMonth - 1, 15),
@@ -75,42 +86,58 @@ router.post('/', auth, adminOnly, async (req, res) => {
       await payment.save();
     }
 
-    // Send success response FIRST to ensure UI doesn't retry
-    res.status(isNew ? 201 : 200).json({ ...payment.toObject(), success: true });
+    // Update flat's current month status BEFORE sending response
+    // This ensures the block view shows green immediately
+    try {
+      const now = new Date();
+      if (mMonth === (now.getMonth() + 1) && mYear === now.getFullYear()) {
+        console.log(`[Payment] Updating flat ${flatId} status to: ${payment.status}`);
+        await Flat.findByIdAndUpdate(flatId, { currentMonthStatus: payment.status });
+      }
+    } catch (flatUpdateErr) {
+      console.error('[Payment] Non-critical: flat status update failed:', flatUpdateErr.message);
+    }
 
-    // Everything below this is secondary and won't crash the main response
-    // Using setImmediate to truly push it to the next event loop tick
+    // Send success response IMMEDIATELY
+    const responsePayment = payment.toObject();
+    res.status(isNew ? 201 : 200).json(responsePayment);
+    console.log(`[Payment] Response sent successfully (${isNew ? 'created' : 'updated'})`);
+
+    // ALL background tasks - socket, notifications - run AFTER response
+    // These CANNOT cause any error for the user
     setImmediate(async () => {
       try {
         const monthName = new Date(mYear, mMonth - 1).toLocaleString('default', { month: 'long' });
 
         // Real-time update via Socket.io
-        emitToSociety(societyId, 'payment_recorded', { 
-          payment, 
-          flatId,
-          message: `Payment of ₹${mPaidAmount} recorded for ${monthName} ${mYear}`
-        });
+        try {
+          emitToSociety(societyId.toString(), 'payment_recorded', { 
+            payment: responsePayment, 
+            flatId: flatId.toString(),
+            message: `Payment of ₹${mPaidAmount} recorded for ${monthName} ${mYear}`
+          });
+        } catch (socketErr) {
+          console.error('[Payment] Socket emit error:', socketErr.message);
+        }
 
         // Notify flat owner
-        notifyFlatOwner({
-          flatId,
-          societyId,
-          title: 'Payment Recorded',
-          message: `A payment of ₹${mPaidAmount} has been recorded for ${monthName} ${mYear}.`,
-          type: 'success'
-        }).catch(e => console.error('Notification error:', e));
-
-        // Update flat's current month status if it's the current month
-        const now = new Date();
-        if (mMonth === now.getMonth() + 1 && mYear === now.getFullYear()) {
-          await Flat.findByIdAndUpdate(flatId, { currentMonthStatus: payment.status });
+        try {
+          await notifyFlatOwner({
+            flatId,
+            societyId,
+            title: 'Payment Recorded',
+            message: `A payment of ₹${mPaidAmount} has been recorded for ${monthName} ${mYear}. Status: ${payment.status}`,
+            type: 'success'
+          });
+        } catch (notifErr) {
+          console.error('[Payment] Notification error:', notifErr.message);
         }
       } catch (secondaryError) {
-        console.error('Secondary task error (sockets/notifications):', secondaryError);
+        console.error('[Payment] Background task error:', secondaryError.message);
       }
     });
   } catch (error) {
-    console.error('Payment Recording Error:', error);
+    console.error('[Payment] Recording Error:', error);
     if (!res.headersSent) {
       res.status(500).json({ message: 'Server error', error: error.message });
     }
@@ -151,16 +178,15 @@ router.post('/generate-bills', auth, adminOnly, async (req, res) => {
         { currentMonthStatus: 'pending' }
       );
 
-      // Notify all users about new bills
+      // Notify all users about new bills (background - don't fail request)
       const monthName = new Date(year, month - 1).toLocaleString('default', { month: 'long' });
-      await notifyAllUsers({
+      notifyAllUsers({
         societyId,
         title: 'Maintenance Bills Generated',
         message: `Maintenance bills of ₹${amount} for ${monthName} ${year} have been generated. Please check your dues.`,
         type: 'info'
-      });
+      }).catch(e => console.error('Bill notification error:', e));
     }
-
 
     res.json({ message: `Bills generated for ${newPayments.length} flats`, count: newPayments.length });
   } catch (error) {
@@ -181,7 +207,7 @@ router.put('/:id', auth, adminOnly, async (req, res) => {
     payment.notes = notes || payment.notes;
     if (lateFee !== undefined) payment.lateFee = lateFee;
 
-    const totalAmount = payment.amount + payment.lateFee;
+    const totalAmount = (payment.amount || 0) + (payment.lateFee || 0);
     if (paidAmount >= totalAmount) payment.status = 'paid';
     else if (paidAmount > 0) payment.status = 'partial';
     else payment.status = 'pending';
@@ -190,24 +216,34 @@ router.put('/:id', auth, adminOnly, async (req, res) => {
 
     await payment.save();
 
-    // Notify flat owner
-    const monthName = new Date(payment.year, payment.month - 1).toLocaleString('default', { month: 'long' });
-    await notifyFlatOwner({
-      flatId: payment.flatId,
-      societyId: payment.societyId,
-      title: 'Payment Updated',
-      message: `Your payment for ${monthName} ${payment.year} has been updated. Paid: ₹${paidAmount}.`,
-      type: 'success'
-    });
-
-
-    // Update flat status
-    const now = new Date();
-    if (payment.month === now.getMonth() + 1 && payment.year === now.getFullYear()) {
-      await Flat.findByIdAndUpdate(payment.flatId, { currentMonthStatus: payment.status });
+    // Update flat status BEFORE response
+    try {
+      const now = new Date();
+      if (payment.month === (now.getMonth() + 1) && payment.year === now.getFullYear()) {
+        await Flat.findByIdAndUpdate(payment.flatId, { currentMonthStatus: payment.status });
+      }
+    } catch (flatErr) {
+      console.error('[Payment PUT] flat status update error:', flatErr.message);
     }
 
+    // Send response FIRST
     res.json(payment);
+
+    // Background: Notify flat owner (don't block response)
+    setImmediate(async () => {
+      try {
+        const monthName = new Date(payment.year, payment.month - 1).toLocaleString('default', { month: 'long' });
+        await notifyFlatOwner({
+          flatId: payment.flatId,
+          societyId: payment.societyId,
+          title: 'Payment Updated',
+          message: `Your payment for ${monthName} ${payment.year} has been updated. Paid: ₹${paidAmount}.`,
+          type: 'success'
+        });
+      } catch (e) {
+        console.error('[Payment PUT] notification error:', e.message);
+      }
+    });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
@@ -217,7 +253,7 @@ router.put('/:id', auth, adminOnly, async (req, res) => {
 router.get('/flat/:flatId', auth, async (req, res) => {
   try {
     const payments = await Payment.find({ flatId: req.params.flatId })
-      .sort({ year: -1, month: -1 });
+      .sort({ createdAt: -1 });
     res.json(payments);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -235,7 +271,7 @@ router.get('/society/:societyId', auth, async (req, res) => {
 
     const payments = await Payment.find(filter)
       .populate('flatId', 'number blockId ownerName')
-      .sort({ year: -1, month: -1 });
+      .sort({ createdAt: -1 });
     res.json(payments);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -250,7 +286,7 @@ router.get('/pending/:societyId', auth, async (req, res) => {
       status: { $in: ['pending', 'partial'] }
     })
       .populate('flatId', 'number blockId ownerName ownerPhone')
-      .sort({ year: -1, month: -1 });
+      .sort({ createdAt: -1 });
     res.json(payments);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -285,4 +321,3 @@ router.get('/:id/receipt', auth, async (req, res) => {
 });
 
 module.exports = router;
-
