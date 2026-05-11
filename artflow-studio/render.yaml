@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: antig-backend
+    env: node
+    region: oregon
+    repo: https://github.com/pixelperfect050-cloud/Antig
+    branch: main
+    rootDir: artflow-studio
+    buildCommand: npm install && cd server && npm install
+    startCommand: cd server && node server.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: MONGODB_URI
+        value: mongodb+srv://pixelperfect050_db_user:PixelPerfect050@cluster0.4v6flij.mongodb.net/?appName=Cluster0
+      - key: JWT_SECRET
+        value: artflow_studio_jwt_secret_2024_xK9mP2
+      - key: DEFAULT_ADMIN_PASSWORD
+        value: admin123
+      - key: CLIENT_URL
+        value: https://artflow-live.vercel.app
+      - key: RENDER_EXTERNAL_URL
+        value: https://antig-backend-y4uy.onrender.com
+      - key: NODE_ENV
+        value: production
