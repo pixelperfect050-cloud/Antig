@@ -14,45 +14,32 @@ const connectDB = async () => {
       }
       connectWithMemory = true;
     } else {
-      // Try production connection with longer timeout
       try {
+        console.log('Connecting to MongoDB...');
         await mongoose.connect(uri, {
-          serverSelectionTimeoutMS: 30000,
-          socketTimeoutMS: 30000,
-          connectTimeoutMS: 30000,
+          serverSelectionTimeoutMS: 5000,
+          socketTimeoutMS: 45000,
         });
-        await mongoose.connection.db.admin().ping();
+        console.log('MongoDB Connected successfully');
       } catch (err) {
-        console.warn('MongoDB connection failed, falling back to in-memory:', err.message);
-        if (isProduction) {
-          console.error('Production database connection failed and cannot fallback to memory');
-          process.exit(1);
-        }
+        console.error('MongoDB connection failed:', err.message);
+        if (isProduction) process.exit(1);
         connectWithMemory = true;
       }
     }
 
     if (connectWithMemory) {
-      if (mongoose.connection.readyState !== 0) {
-        await mongoose.disconnect();
-      }
+      console.log('Falling back to memory DB...');
       const { MongoMemoryServer } = require('mongodb-memory-server');
-      const mongod = await MongoMemoryServer.create({ instance: { port: 0 } });
-      const memoryUri = mongod.getUri();
-      console.log('Using in-memory MongoDB:', memoryUri);
-      await mongoose.connect(memoryUri, {
-        serverSelectionTimeoutMS: 30000,
-        socketTimeoutMS: 30000,
-        connectTimeoutMS: 30000,
-      });
+      const mongod = await MongoMemoryServer.create();
+      await mongoose.connect(mongod.getUri());
+      console.log('Memory DB Connected');
     }
 
     const User = require('../models/User');
-    const adminExists = await User.findOne({ role: 'admin' });
-    const defaultAdminPassword = process.env.DEFAULT_ADMIN_PASSWORD || 'admin123';
-
+    const adminExists = await User.findOne({ role: 'admin' }).catch(() => null);
     if (!adminExists) {
-      const hashed = await bcrypt.hash(defaultAdminPassword, 10);
+      const hashed = await require('bcryptjs').hash(process.env.DEFAULT_ADMIN_PASSWORD || 'admin123', 10);
       await User.create({
         name: 'Admin',
         email: 'admin@artflow.studio',
@@ -61,9 +48,8 @@ const connectDB = async () => {
         role: 'admin',
       });
     }
-
   } catch (err) {
-    console.error('DB connection error:', err.message);
+    console.error('Fatal DB error:', err.message);
     process.exit(1);
   }
 };
