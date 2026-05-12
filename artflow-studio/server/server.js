@@ -100,19 +100,20 @@ app.use((err, _req, res, _next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-(async () => {
-  await connectDB();
-  server.listen(PORT, () => {
-    if (process.env.NODE_ENV === 'production' && process.env.RENDER_EXTERNAL_URL) {
-      const https = require('https');
-      const keepAliveUrl = process.env.RENDER_EXTERNAL_URL;
-      const KEEP_ALIVE_MS = 10 * 60 * 1000;
-      setTimeout(() => {
-        https.get(`${keepAliveUrl}/api/health`).on('error', () => {});
-      }, 30000);
-      setInterval(() => {
-        https.get(`${keepAliveUrl}/api/health`).on('error', () => {});
-      }, KEEP_ALIVE_MS);
-    }
-  });
-})();
+server.listen(PORT, async () => {
+  console.log(`Server running on port ${PORT}`);
+  // Connect to DB in background so we don't block Render health check
+  connectDB().catch(err => console.error('Background DB connection failed:', err.message));
+
+  if (process.env.NODE_ENV === 'production' && process.env.RENDER_EXTERNAL_URL) {
+    const https = require('https');
+    const keepAliveUrl = process.env.RENDER_EXTERNAL_URL;
+    const KEEP_ALIVE_MS = 10 * 60 * 1000;
+    setTimeout(() => {
+      https.get(`${keepAliveUrl}/api/health`).on('error', () => {});
+    }, 30000);
+    setInterval(() => {
+      https.get(`${keepAliveUrl}/api/health`).on('error', () => {});
+    }, KEEP_ALIVE_MS);
+  }
+});
