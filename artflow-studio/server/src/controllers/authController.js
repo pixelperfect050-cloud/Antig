@@ -57,10 +57,16 @@ exports.login = async (req, res) => {
     if (!email?.trim() || !password) return res.status(400).json({ success: false, message: 'Email and password required.' });
 
     const user = await User.findOne({ email: email.toLowerCase().trim() });
-    if (!user) return res.status(401).json({ success: false, message: 'Invalid credentials.' });
+    if (!user) {
+      console.log(`[AUTH] Login failed: User not found for email ${email}`);
+      return res.status(401).json({ success: false, message: 'Invalid credentials.' });
+    }
 
     const match = await bcrypt.compare(password, user.password);
-    if (!match) return res.status(401).json({ success: false, message: 'Invalid credentials.' });
+    if (!match) {
+      console.log(`[AUTH] Login failed: Password mismatch for email ${email}`);
+      return res.status(401).json({ success: false, message: 'Invalid credentials.' });
+    }
 
     if (!user.isActive) return res.status(403).json({ success: false, message: 'Account is deactivated.' });
 
