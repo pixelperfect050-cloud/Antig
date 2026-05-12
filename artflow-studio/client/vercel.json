@@ -6,7 +6,7 @@
     },
     {
       "source": "/socket.io/:path*",
-      "destination": "https://antig-backend-y4uy.onrender.com/socket.io/:path*"
+      "destination": "https://antig-backend-ingm.onrender.com/socket.io/:path*"
     },
     {
       "source": "/((?!api|socket\\.io).*)",

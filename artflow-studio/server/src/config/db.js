@@ -23,12 +23,16 @@ const connectDB = async () => {
         console.log('MongoDB Connected successfully');
       } catch (err) {
         console.error('MongoDB connection failed:', err.message);
-        if (isProduction) process.exit(1);
+        // Do not exit process, let it stay alive for health check
         connectWithMemory = true;
       }
     }
 
     if (connectWithMemory) {
+      if (isProduction) {
+        console.error('Database connection failed. Memory DB fallback disabled in production.');
+        return; // Just return, don't try to start memory server
+      }
       console.log('Falling back to memory DB...');
       const { MongoMemoryServer } = require('mongodb-memory-server');
       const mongod = await MongoMemoryServer.create();
