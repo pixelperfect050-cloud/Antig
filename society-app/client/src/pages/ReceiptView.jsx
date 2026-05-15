@@ -6,9 +6,9 @@ import api from '../utils/api';
 
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
-const formatINR = (amt) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 }).format(amt || 0);
+const formatINR = (amt) => '₹' + new Intl.NumberFormat('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amt || 0);
 
-const formatMethod = (m) => ({ cash: '💵 Cash', upi: '📱 UPI', bank_transfer: '🏦 Bank Transfer', cheque: '📝 Cheque', online: '🌐 Online' }[m] || m || 'Cash');
+const formatMethod = (m) => ({ cash: 'Cash', upi: 'UPI', bank_transfer: 'Bank Transfer', cheque: 'Cheque', online: 'Online' }[m] || m || 'Cash');
 
 const numberToWords = (num) => {
   if (!num || num === 0) return 'Zero';
@@ -121,9 +121,7 @@ const ReceiptView = () => {
 
         {/* ─── TITLE BAR ─── */}
         <div className="receipt-title-bar">
-          <span className="receipt-title-bar__diamond">◆</span>
           <span>MAINTENANCE RECEIPT</span>
-          <span className="receipt-title-bar__diamond">◆</span>
         </div>
 
         {/* ─── RECEIPT META ─── */}
@@ -156,8 +154,8 @@ const ReceiptView = () => {
             <div>
               <h2 className="receipt-member__name">{f?.ownerName || 'N/A'}</h2>
               <div className="receipt-member__badges">
-                <span className="receipt-badge receipt-badge--primary">🏠 {flatLabel}</span>
-                <span className="receipt-badge receipt-badge--secondary">📅 {MONTHS[p.month-1]} {p.year}</span>
+                <span className="receipt-badge receipt-badge--primary">FLAT: {flatLabel}</span>
+                <span className="receipt-badge receipt-badge--secondary">PERIOD: {MONTHS[p.month-1]} {p.year}</span>
               </div>
               {f?.ownerPhone && <p className="receipt-member__phone">📱 +91 {f.ownerPhone}</p>}
             </div>
@@ -213,22 +211,17 @@ const ReceiptView = () => {
 
         {/* ─── PAYMENT INFO CARDS ─── */}
         <div className="receipt-info-grid">
-          <div className="receipt-info-card">
-            <span className="receipt-info-card__icon">💳</span>
             <div>
               <span className="receipt-info-card__label">Payment Mode</span>
               <span className="receipt-info-card__value">{formatMethod(p.paymentMethod)}</span>
             </div>
-          </div>
           <div className="receipt-info-card">
-            <span className="receipt-info-card__icon">💰</span>
             <div>
               <span className="receipt-info-card__label">Amount Paid</span>
               <span className="receipt-info-card__value receipt-info-card__value--success">{formatINR(p.paidAmount || total)}</span>
             </div>
           </div>
           <div className="receipt-info-card">
-            <span className="receipt-info-card__icon">📋</span>
             <div>
               <span className="receipt-info-card__label">Status</span>
               <span className={`receipt-info-card__value receipt-info-card__value--${p.status === 'paid' ? 'success' : p.status === 'partial' ? 'warning' : 'danger'}`}>
@@ -241,7 +234,7 @@ const ReceiptView = () => {
         {/* ─── NOTES ─── */}
         {p.notes && (
           <div className="receipt-notes">
-            <span className="receipt-notes__label">📝 Notes</span>
+            <span className="receipt-notes__label">Notes</span>
             <p>{p.notes}</p>
           </div>
         )}

@@ -31,8 +31,7 @@
 .receipt-status--pending{background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.2)}
 
 /* ─── TITLE BAR ─── */
-.receipt-title-bar{display:flex;align-items:center;justify-content:center;gap:.75rem;padding:.6rem;background:var(--bg-input);border-bottom:1px solid var(--border);font-size:.8rem;font-weight:700;color:var(--text);letter-spacing:.08em}
-.receipt-title-bar__diamond{color:var(--primary);font-size:.6rem}
+.receipt-title-bar{display:flex;align-items:center;justify-content:center;gap:.75rem;padding:.6rem;background:var(--bg-input);border-bottom:1px solid var(--border);font-size:.8rem;font-weight:700;color:var(--text);letter-spacing:.08em;border-top:1px solid var(--border)}
 
 /* ─── RECEIPT META ─── */
 .receipt-meta{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;padding:1rem 1.5rem;border-bottom:1px solid var(--border)}
@@ -63,16 +62,16 @@
 .receipt-table thead{background:linear-gradient(135deg,#1e1b4b,#312e81)}
 .receipt-table thead th{color:#fff;font-weight:600;font-size:.72rem;padding:.7rem .75rem;text-transform:uppercase;letter-spacing:.06em;text-align:left}
 .receipt-table thead th.receipt-table__sn{width:36px;text-align:center}
-.receipt-table thead th.receipt-table__amt{text-align:right}
+.receipt-table thead th.receipt-table__amt{text-align:right !important}
 .receipt-table tbody td{padding:.7rem .75rem;border-bottom:1px solid var(--border);color:var(--text)}
 .receipt-table tbody tr:nth-child(even){background:rgba(99,102,241,.02)}
 [data-theme="dark"] .receipt-table tbody tr:nth-child(even){background:rgba(255,255,255,.02)}
 .receipt-table tbody td:first-child{text-align:center;color:var(--text-muted);font-weight:500;font-size:.8rem}
-.receipt-table .receipt-table__amt{text-align:right;font-weight:600;font-family:'Inter',sans-serif}
+.receipt-table .receipt-table__amt{text-align:right !important;font-weight:600;font-family:'Inter',sans-serif}
 .receipt-row--highlight td{color:#dc2626!important;font-weight:600}
 .receipt-table tfoot tr.receipt-table__total{background:linear-gradient(135deg,#1e1b4b,#312e81)}
 .receipt-table tfoot .receipt-table__total td{color:#fff;font-weight:700;font-size:1rem;padding:.75rem;border:none}
-.receipt-table tfoot .receipt-table__total td:last-child{text-align:right;font-size:1.1rem}
+.receipt-table tfoot .receipt-table__total td:last-child{text-align:right !important;font-size:1.1rem}
 
 /* ─── AMOUNT IN WORDS ─── */
 .receipt-words{padding:.75rem 1.5rem;display:flex;flex-direction:column;gap:.15rem;border-bottom:1px solid var(--border)}
