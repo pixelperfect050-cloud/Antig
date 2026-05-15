@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -8,14 +8,32 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [loginMode, setLoginMode] = useState('email');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const { login, error } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
+  // Load saved email from "remember me"
+  useEffect(() => {
+    const savedEmail = localStorage.getItem('remembered_email');
+    if (savedEmail) {
+      setEmail(savedEmail);
+      setRememberMe(true);
+    }
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (loginMode === 'mobile') return; // OTP not wired yet
     setLoading(true);
     try {
+      // Save/remove email for remember me
+      if (rememberMe) {
+        localStorage.setItem('remembered_email', email);
+      } else {
+        localStorage.removeItem('remembered_email');
+      }
       await login(email, password);
       navigate('/dashboard');
     } catch (err) {
@@ -46,8 +64,8 @@ const Login = () => {
           </div>
 
           <div className="auth-tabs" style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--border)' }}>
-            <button type="button" onClick={() => setLoginMode('email')} style={{ flex: 1, padding: '0.75rem', background: 'none', border: 'none', borderBottom: loginMode === 'email' ? '2px solid var(--primary)' : 'none', color: loginMode === 'email' ? 'var(--primary)' : 'var(--text-secondary)', fontWeight: '600', cursor: 'pointer' }}>Email</button>
-            <button type="button" onClick={() => setLoginMode('mobile')} style={{ flex: 1, padding: '0.75rem', background: 'none', border: 'none', borderBottom: loginMode === 'mobile' ? '2px solid var(--primary)' : 'none', color: loginMode === 'mobile' ? 'var(--primary)' : 'var(--text-secondary)', fontWeight: '600', cursor: 'pointer' }}>Mobile</button>
+            <button type="button" onClick={() => setLoginMode('email')} style={{ flex: 1, padding: '0.75rem', background: 'none', border: 'none', borderBottom: loginMode === 'email' ? '2px solid var(--primary)' : 'none', color: loginMode === 'email' ? 'var(--primary)' : 'var(--text-secondary)', fontWeight: '600', cursor: 'pointer', fontSize: '0.9rem' }}>Email</button>
+            <button type="button" onClick={() => setLoginMode('mobile')} style={{ flex: 1, padding: '0.75rem', background: 'none', border: 'none', borderBottom: loginMode === 'mobile' ? '2px solid var(--primary)' : 'none', color: loginMode === 'mobile' ? 'var(--primary)' : 'var(--text-secondary)', fontWeight: '600', cursor: 'pointer', fontSize: '0.9rem' }}>Mobile</button>
           </div>
 
           <form onSubmit={handleSubmit} className="auth-form">
@@ -69,6 +87,9 @@ const Login = () => {
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="Enter your email"
                       required
+                      autoComplete="email"
+                      inputMode="email"
+                      enterKeyHint="next"
                     />
                   </div>
                 </div>
@@ -78,14 +99,36 @@ const Login = () => {
                   <div className="input-wrapper">
                     <span className="input-icon">🔒</span>
                     <input
-                      type="password"
+                      type={showPassword ? 'text' : 'password'}
                       id="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="Enter your password"
                       required
+                      autoComplete="current-password"
+                      enterKeyHint="go"
                     />
+                    <button 
+                      type="button" 
+                      className="password-toggle" 
+                      onClick={() => setShowPassword(!showPassword)}
+                      tabIndex={-1}
+                    >
+                      {showPassword ? '🙈' : '👁️'}
+                    </button>
                   </div>
+                </div>
+
+                <div className="remember-row">
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                    />
+                    Remember me
+                  </label>
+                  <Link to="/forgot-password" className="forgot-link">Forgot Password?</Link>
                 </div>
               </>
             ) : (
@@ -98,6 +141,10 @@ const Login = () => {
                     id="mobile"
                     placeholder="Enter 10-digit mobile number"
                     required
+                    inputMode="tel"
+                    autoComplete="tel"
+                    enterKeyHint="send"
+                    pattern="[0-9]{10}"
                   />
                 </div>
                 <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
