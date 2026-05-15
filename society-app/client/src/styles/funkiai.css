@@ -1,0 +1,273 @@
+/* ══════════════════════════════════════
+   FunkiAI — PREMUM FLOATING ASSISTANT
+   ══════════════════════════════════════ */
+
+.funkiai-container {
+  position: fixed;
+  bottom: 25px;
+  right: 25px;
+  z-index: 9999;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* ─── FLOATING BUTTON ─── */
+.funkiai-trigger {
+  width: 65px;
+  height: 65px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6, #d946ef);
+  border: none;
+  box-shadow: 0 8px 32px rgba(99, 102, 241, 0.4);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  position: relative;
+  overflow: hidden;
+}
+
+.funkiai-trigger:hover {
+  transform: scale(1.1) rotate(5deg);
+  box-shadow: 0 12px 40px rgba(99, 102, 241, 0.6);
+}
+
+.funkiai-trigger svg {
+  width: 32px;
+  height: 32px;
+  color: white;
+  z-index: 2;
+}
+
+.funkiai-trigger::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(transparent, rgba(255, 255, 255, 0.2));
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.funkiai-trigger:hover::after {
+  opacity: 1;
+}
+
+/* ─── CHAT WINDOW ─── */
+.funkiai-window {
+  position: absolute;
+  bottom: 85px;
+  right: 0;
+  width: 380px;
+  height: 550px;
+  background: var(--bg-card, #ffffff);
+  border-radius: 24px;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transform-origin: bottom right;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid var(--border, #e2e8f0);
+}
+
+[data-theme="dark"] .funkiai-window {
+  background: #1e1b4b;
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.4);
+}
+
+.funkiai-window.hidden {
+  transform: scale(0.8) translateY(20px);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ─── HEADER ─── */
+.funkiai-header {
+  padding: 1.25rem;
+  background: linear-gradient(135deg, #1e1b4b, #312e81);
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.funkiai-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.funkiai-title h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.funkiai-title p {
+  font-size: 0.75rem;
+  opacity: 0.7;
+  margin: 0;
+}
+
+.funkiai-close {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.funkiai-close:hover {
+  opacity: 1;
+}
+
+/* ─── MESSAGES ─── */
+.funkiai-messages {
+  flex: 1;
+  padding: 1.25rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  scroll-behavior: smooth;
+}
+
+.funkiai-msg {
+  max-width: 80%;
+  padding: 0.85rem 1rem;
+  border-radius: 18px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  animation: msgSlide 0.3s ease-out;
+}
+
+@keyframes msgSlide {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.funkiai-msg--ai {
+  align-self: flex-start;
+  background: #f1f5f9;
+  color: #1e293b;
+  border-bottom-left-radius: 4px;
+}
+
+[data-theme="dark"] .funkiai-msg--ai {
+  background: rgba(255, 255, 255, 0.05);
+  color: #e2e8f0;
+}
+
+.funkiai-msg--user {
+  align-self: flex-end;
+  background: #6366f1;
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+
+/* ─── INPUT ─── */
+.funkiai-input-area {
+  padding: 1.25rem;
+  border-top: 1px solid var(--border, #e2e8f0);
+  background: var(--bg-card, #ffffff);
+}
+
+[data-theme="dark"] .funkiai-input-area {
+  background: #1e1b4b;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.funkiai-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-input, #f8fafc);
+  padding: 8px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--border, #e2e8f0);
+}
+
+[data-theme="dark"] .funkiai-input-wrap {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.funkiai-input-wrap input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text, #1e293b);
+  font-size: 0.9rem;
+  padding: 4px;
+}
+
+.funkiai-btn {
+  background: none;
+  border: none;
+  color: #6366f1;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s;
+}
+
+.funkiai-btn:hover {
+  transform: scale(1.1);
+}
+
+.funkiai-btn--mic.active {
+  color: #ef4444;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+/* ─── WAVE ANIMATION ─── */
+.voice-wave {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 20px;
+}
+
+.voice-wave span {
+  width: 2px;
+  height: 4px;
+  background: #6366f1;
+  border-radius: 1px;
+  animation: wave 1s infinite ease-in-out;
+}
+
+@keyframes wave {
+  0%, 100% { height: 4px; }
+  50% { height: 16px; }
+}
+
+/* Mobile Adjustments */
+@media (max-width: 480px) {
+  .funkiai-window {
+    width: calc(100vw - 40px);
+    height: 70vh;
+    bottom: 80px;
+    right: -5px;
+  }
+}

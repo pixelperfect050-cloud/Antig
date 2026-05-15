@@ -25,6 +25,7 @@ import PaymentVerification from './pages/PaymentVerification';
 import Funds from './pages/Funds';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import ReceiptView from './pages/ReceiptView';
+import FunkiAI from './components/FunkiAI';
 
 const ProtectedRoute = ({ children, adminOnly = false }) => {
   const { user, loading } = useAuth();
@@ -119,6 +120,7 @@ function App() {
         <Route path="funds" element={<Funds />} />
         <Route path="receipt/:paymentId" element={<ReceiptView />} />
       </Route>
+      {user && <FunkiAI />}
     </Routes>
   );
 }
