@@ -85,10 +85,7 @@ const generatePaymentReceipt = (payment, society, flat) => {
     const titleY = M + 65;
     doc.rect(M, titleY, CW, 22).fill(C.bg);
     doc.rect(M, titleY, CW, 22).lineWidth(0.5).strokeColor(C.line).stroke();
-    // Diamond decorators
-    doc.fillColor(C.accent).fontSize(8)
-       .text('◆', M + 10, titleY + 6)
-       .text('◆', W - M - 18, titleY + 6);
+    // Title text only, no decorators
     doc.fillColor(C.brand).font('Helvetica-Bold').fontSize(11)
        .text('MAINTENANCE RECEIPT', M, titleY + 5, { width: CW, align: 'center' });
 
@@ -126,10 +123,10 @@ const generatePaymentReceipt = (payment, society, flat) => {
     const flatLabel = blockName ? `${blockName} - ${flatNumber}` : flatNumber;
 
     // Block & Flat badge
-    drawBadge(doc, M, badgeY, `🏢  ${flatLabel}`, C.brand);
+    drawBadge(doc, M, badgeY, `Flat: ${flatLabel}`, C.brand);
     // Month badge
-    const monthBadgeX = M + flatLabel.length * 6.5 + 50;
-    drawBadge(doc, monthBadgeX, badgeY, `📅  ${monthName} ${payment.year}`, C.brandLight);
+    const monthBadgeX = M + 80;
+    drawBadge(doc, monthBadgeX, badgeY, `Period: ${monthName} ${payment.year}`, C.brandLight);
 
     doc.moveTo(M, badgeY + 24).lineTo(W - M, badgeY + 24).lineWidth(0.5).strokeColor(C.lineFaint).stroke();
 
@@ -147,7 +144,7 @@ const generatePaymentReceipt = (payment, society, flat) => {
     doc.fillColor(C.white).font('Helvetica-Bold').fontSize(8)
        .text('S.N.', colSN + 8, tableY + 8)
        .text('DESCRIPTION', colDesc + 5, tableY + 8)
-       .text('AMOUNT (₹)', colAmt, tableY + 8, { width: 80, align: 'right' });
+       .text('AMOUNT (Rs.)', colAmt, tableY + 8, { width: 80, align: 'right' });
 
     // Table rows
     const rows = [
@@ -286,7 +283,7 @@ const generatePaymentReceipt = (payment, society, flat) => {
 // ─── HELPERS ───
 
 function formatINR(amount) {
-  return '₹ ' + new Intl.NumberFormat('en-IN', { maximumFractionDigits: 2, minimumFractionDigits: 2 }).format(amount || 0);
+  return 'Rs. ' + new Intl.NumberFormat('en-IN', { maximumFractionDigits: 2, minimumFractionDigits: 2 }).format(amount || 0);
 }
 
 function formatMethod(method) {
