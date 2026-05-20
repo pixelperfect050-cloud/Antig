@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import api from '../utils/api';
+import { setSentryUser, captureError } from '../utils/sentry';
 
 const AuthContext = createContext();
 
@@ -19,10 +20,12 @@ export const AuthProvider = ({ children }) => {
       }
       const userData = await api.get('/api/auth/me');
       setUser(userData);
+      setSentryUser(userData);
     } catch (err) {
       console.warn('Session load failed, clearing token:', err.message);
       localStorage.removeItem('token');
       setUser(null);
+      setSentryUser(null);
     } finally {
       setLoading(false);
     }
@@ -67,10 +70,12 @@ export const AuthProvider = ({ children }) => {
       // Small delay to ensure localStorage writes are flushed on mobile
       await new Promise(r => setTimeout(r, 50));
       setUser(data.user);
+      setSentryUser(data.user);
       return data;
     } catch (err) {
       const message = err.message || 'Login failed. Please try again.';
       setError(message);
+      captureError(err, { context: 'login', email });
       throw err;
     }
   };
@@ -82,10 +87,12 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('token', data.token);
       await new Promise(r => setTimeout(r, 50));
       setUser(data.user);
+      setSentryUser(data.user);
       return data;
     } catch (err) {
       const message = err.message || 'Registration failed. Please try again.';
       setError(message);
+      captureError(err, { context: 'register' });
       throw err;
     }
   };
@@ -93,6 +100,7 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     localStorage.removeItem('token');
     setUser(null);
+    setSentryUser(null);
     setError('');
   };
 

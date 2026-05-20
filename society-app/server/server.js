@@ -1,4 +1,6 @@
 require('dotenv').config();
+const Sentry = require('@sentry/node');
+const { initSentry } = require('./src/config/sentry');
 const express = require('express');
 const cors = require('cors');
 const connectDB = require('./src/config/db');
@@ -7,6 +9,10 @@ const http = require('http');
 const { initializeSocket } = require('./src/services/socketService');
 
 const app = express();
+
+// Initialize Sentry (must be before any middleware)
+initSentry(app);
+
 const server = http.createServer(app);
 
 // Connect Database
@@ -70,10 +76,20 @@ app.get('/', (req, res) => {
   res.json({ message: 'SocietySync API is running 🚀', version: '1.1.0' });
 });
 
+// Sentry error handler (must be before custom error handler)
+if (process.env.SENTRY_DSN) {
+  Sentry.setupExpressErrorHandler(app);
+}
+
 // Error handler
 app.use((err, req, res, next) => {
+  const eventId = res.sentry ? res.sentry : null;
   console.error(err.stack);
-  res.status(500).json({ message: 'Something went wrong!', error: err.message });
+  res.status(err.status || 500).json({ 
+    message: 'Something went wrong!', 
+    error: process.env.NODE_ENV === 'production' ? 'Internal server error' : err.message,
+    ...(eventId && { sentryEventId: eventId })
+  });
 });
 
 const PORT = process.env.PORT || 5000;

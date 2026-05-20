@@ -8,6 +8,11 @@ import { ThemeProvider } from './context/ThemeContext';
 import './index.css';
 import './styles/landing.css';
 import './styles/receipt.css';
+import { initSentry, Sentry } from './utils/sentry';
+import ErrorFallback from './components/ErrorFallback';
+
+// Initialize Sentry early
+initSentry();
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
@@ -15,7 +20,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       <ThemeProvider>
         <AuthProvider>
           <SocketProvider>
-            <App />
+            <Sentry.ErrorBoundary fallback={({ error, resetError }) => <ErrorFallback error={error} resetError={resetError} />}>
+              <App />
+            </Sentry.ErrorBoundary>
           </SocketProvider>
         </AuthProvider>
       </ThemeProvider>

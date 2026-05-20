@@ -1,4 +1,5 @@
 const API_BASE = (import.meta.env.VITE_API_URL || 'https://society-backend-b004.onrender.com').replace(/\/$/, '');
+import { captureError, addBreadcrumb } from './sentry';
 
 const getHeaders = () => {
   const token = localStorage.getItem('token');
@@ -15,9 +16,14 @@ const handleResponse = async (res) => {
     data = text ? JSON.parse(text) : {};
   } catch (parseErr) {
     if (res.ok) return {};
+    captureError(parseErr, { status: res.status, url: res.url });
     throw new Error(`Server error (status ${res.status})`);
   }
-  if (!res.ok) throw new Error(data.message || `Server error (status ${res.status})`);
+  if (!res.ok) {
+    const error = new Error(data.message || `Server error (status ${res.status})`);
+    captureError(error, { data, status: res.status, url: res.url });
+    throw error;
+  }
   return data;
 };
 
@@ -27,6 +33,13 @@ const fetchWithRetry = async (url, options, retries = 2) => {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+      
+      addBreadcrumb(`API Request: ${options.method || 'GET'} ${url}`, 'http', {
+        url,
+        method: options.method || 'GET',
+        retryCount: i
+      });
+
       const res = await fetch(url, { ...options, signal: controller.signal });
       clearTimeout(timeoutId);
       return res;

@@ -7,6 +7,12 @@ if (!supabaseUrl || !supabaseKey) {
   console.warn('⚠️ Supabase credentials missing in environment variables.');
 }
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false,
+    detectSessionInUrl: false
+  }
+});
 
 module.exports = supabase;

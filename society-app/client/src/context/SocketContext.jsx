@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 import { useAuth } from './AuthContext';
+import { captureError, addBreadcrumb } from '../utils/sentry';
 
 const SocketContext = createContext();
 
@@ -31,6 +32,7 @@ export const SocketProvider = ({ children }) => {
 
         newSocket.on('connect_error', (err) => {
           console.error('Socket connection error:', err.message);
+          captureError(err, { context: 'socket_connect_error', socketUrl });
         });
 
         setSocket(newSocket);
