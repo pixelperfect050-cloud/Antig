@@ -10,3 +10,5 @@ build/
 society-app/brain/
 *.js.bak
 
+society-app/test-results/
+society-app/playwright-report/

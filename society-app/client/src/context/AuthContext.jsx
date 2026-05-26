@@ -104,8 +104,48 @@ export const AuthProvider = ({ children }) => {
     setError('');
   };
 
+  const forgotPassword = async (email) => {
+    try {
+      return await api.post('/api/auth/forgot-password', { email });
+    } catch (err) {
+      throw err;
+    }
+  };
+
+  const resetPassword = async (token, newPassword) => {
+    try {
+      return await api.post('/api/auth/reset-password', { token, newPassword });
+    } catch (err) {
+      throw err;
+    }
+  };
+
+  const sendOtp = async (phone) => {
+    try {
+      return await api.post('/api/auth/send-otp', { phone });
+    } catch (err) {
+      throw err;
+    }
+  };
+
+  const verifyOtp = async (phone, otp) => {
+    try {
+      setError('');
+      const data = await api.post('/api/auth/verify-otp', { phone, otp });
+      localStorage.setItem('token', data.token);
+      await new Promise(r => setTimeout(r, 50));
+      setUser(data.user);
+      setSentryUser(data.user);
+      return data;
+    } catch (err) {
+      const message = err.message || 'OTP verification failed';
+      setError(message);
+      throw err;
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, setUser, loading, error, login, register, logout, loadUser }}>
+    <AuthContext.Provider value={{ user, setUser, loading, error, login, register, logout, loadUser, forgotPassword, resetPassword, sendOtp, verifyOtp }}>
       {children}
     </AuthContext.Provider>
   );

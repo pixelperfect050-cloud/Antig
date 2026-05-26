@@ -9,8 +9,11 @@ const Login = () => {
   const [loginMode, setLoginMode] = useState('email');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [phone, setPhone] = useState('');
+  const [otp, setOtp] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const { login, error } = useAuth();
+  const { login, sendOtp, verifyOtp, error } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
@@ -25,17 +28,29 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (loginMode === 'mobile') return; // OTP not wired yet
     setLoading(true);
+    
     try {
-      // Save/remove email for remember me
-      if (rememberMe) {
-        localStorage.setItem('remembered_email', email);
+      if (loginMode === 'email') {
+        if (rememberMe) {
+          localStorage.setItem('remembered_email', email);
+        } else {
+          localStorage.removeItem('remembered_email');
+        }
+        await login(email, password);
+        navigate('/dashboard');
       } else {
-        localStorage.removeItem('remembered_email');
+        if (!otpSent) {
+          const res = await sendOtp(phone);
+          setOtpSent(true);
+          // In development, you might want to log the OTP or show it in an alert if not sending actual SMS
+          console.log('OTP:', res.otp); 
+          alert(`Test Mode OTP: ${res.otp}`);
+        } else {
+          await verifyOtp(phone, otp);
+          navigate('/dashboard');
+        }
       }
-      await login(email, password);
-      navigate('/dashboard');
     } catch (err) {
       // error is set in context
     } finally {
@@ -69,8 +84,8 @@ const Login = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="auth-form">
-            <h2 className="form-title">{loginMode === 'email' ? 'Welcome Back' : 'OTP Login'}</h2>
-            <p className="form-subtitle">{loginMode === 'email' ? 'Sign in to your account' : 'Enter mobile number for OTP'}</p>
+            <h2 className="form-title">{loginMode === 'email' ? 'Welcome Back' : (otpSent ? 'Enter OTP' : 'OTP Login')}</h2>
+            <p className="form-subtitle">{loginMode === 'email' ? 'Sign in to your account' : (otpSent ? `Sent to ${phone}` : 'Enter mobile number for OTP')}</p>
 
             {error && <div className="alert alert--error">{error}</div>}
 
@@ -132,29 +147,53 @@ const Login = () => {
                 </div>
               </>
             ) : (
-              <div className="form-group">
-                <label htmlFor="mobile">Mobile Number</label>
-                <div className="input-wrapper">
-                  <span className="input-icon">📱</span>
-                  <input
-                    type="tel"
-                    id="mobile"
-                    placeholder="Enter 10-digit mobile number"
-                    required
-                    inputMode="tel"
-                    autoComplete="tel"
-                    enterKeyHint="send"
-                    pattern="[0-9]{10}"
-                  />
+              !otpSent ? (
+                <div className="form-group">
+                  <label htmlFor="mobile">Mobile Number</label>
+                  <div className="input-wrapper">
+                    <span className="input-icon">📱</span>
+                    <input
+                      type="tel"
+                      id="mobile"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="Enter 10-digit mobile number"
+                      required
+                      inputMode="tel"
+                      autoComplete="tel"
+                      enterKeyHint="send"
+                      pattern="[0-9]{10}"
+                    />
+                  </div>
+                  <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                    A 6-digit OTP will be sent to this number
+                  </div>
                 </div>
-                <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                  A 6-digit OTP will be sent to this number
+              ) : (
+                <div className="form-group">
+                  <label htmlFor="otp">Enter OTP</label>
+                  <div className="input-wrapper">
+                    <span className="input-icon">🔑</span>
+                    <input
+                      type="text"
+                      id="otp"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value)}
+                      placeholder="6-digit code"
+                      required
+                      inputMode="numeric"
+                      pattern="[0-9]{6}"
+                      maxLength="6"
+                      autoComplete="one-time-code"
+                    />
+                  </div>
+                  <button type="button" onClick={() => setOtpSent(false)} style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: '0.8rem', marginTop: '0.5rem', cursor: 'pointer', textAlign: 'left' }}>Change Number</button>
                 </div>
-              </div>
+              )
             )}
 
             <button type="submit" className="btn btn--primary btn--full" disabled={loading} id="login-btn" style={{ borderRadius: '25px', height: '50px' }}>
-              {loading ? <span className="btn-spinner"></span> : (loginMode === 'email' ? 'Sign In' : 'Send OTP')}
+              {loading ? <span className="btn-spinner"></span> : (loginMode === 'email' ? 'Sign In' : (otpSent ? 'Verify OTP' : 'Send OTP'))}
             </button>
 
             <p className="auth-link">

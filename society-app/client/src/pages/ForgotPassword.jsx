@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
@@ -11,6 +12,7 @@ const ForgotPassword = () => {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const { theme, toggleTheme } = useTheme();
+  const { forgotPassword, resetPassword } = useAuth();
 
   const handleSendReset = async (e) => {
     e.preventDefault();
@@ -18,12 +20,14 @@ const ForgotPassword = () => {
     if (!email) { setError('Please enter your email address'); return; }
 
     setLoading(true);
-    // Simulate sending reset email (backend integration point)
     try {
-      await new Promise(r => setTimeout(r, 1500));
+      const res = await forgotPassword(email);
       setStep('otp');
-    } catch {
-      setError('Failed to send reset email. Please try again.');
+      // For development: log and alert the OTP
+      console.log('Reset Code:', res.token);
+      alert(`Test Mode Reset Code: ${res.token}`);
+    } catch (err) {
+      setError(err.response?.data?.message || err.message || 'Failed to send reset email. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -32,15 +36,15 @@ const ForgotPassword = () => {
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
     setError('');
-    if (!otp || otp.length < 4) { setError('Please enter a valid OTP'); return; }
+    if (!otp || otp.length < 6) { setError('Please enter a valid 6-digit code'); return; }
     if (!newPassword || newPassword.length < 6) { setError('Password must be at least 6 characters'); return; }
 
     setLoading(true);
     try {
-      await new Promise(r => setTimeout(r, 1500));
+      await resetPassword(otp, newPassword);
       setStep('success');
-    } catch {
-      setError('Invalid OTP. Please try again.');
+    } catch (err) {
+      setError(err.response?.data?.message || err.message || 'Invalid code. Please try again.');
     } finally {
       setLoading(false);
     }

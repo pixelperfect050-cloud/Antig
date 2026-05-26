@@ -54,7 +54,11 @@ const userSchema = new mongoose.Schema({
   isActive: {
     type: Boolean,
     default: true
-  }
+  },
+  resetPasswordToken: String,
+  resetPasswordExpire: Date,
+  otp: String,
+  otpExpire: Date
 }, { timestamps: true });
 
 // Hash password before saving

@@ -75,18 +75,6 @@ function App() {
       }
     };
     hideStatusBar();
-
-    // Keep-alive ping to prevent Render backend from sleeping
-    const pingBackend = () => {
-      fetch(`${API_BASE}/api/health`)
-        .then(() => console.log('Backend pinged to keep it awake 🚀'))
-        .catch(err => console.error('Ping failed:', err));
-    };
-
-    // Ping immediately and then every 14 minutes
-    pingBackend();
-    const interval = setInterval(pingBackend, 14 * 60 * 1000);
-    return () => clearInterval(interval);
   }, []);
 
   if (loading) {

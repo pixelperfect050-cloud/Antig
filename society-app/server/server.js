@@ -2,6 +2,8 @@ require('dotenv').config();
 const Sentry = require('@sentry/node');
 const { initSentry } = require('./src/config/sentry');
 const express = require('express');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const cors = require('cors');
 const connectDB = require('./src/config/db');
 const path = require('path');
@@ -20,6 +22,18 @@ connectDB();
 
 // Initialize Socket.io
 initializeSocket(server);
+
+// Security Middleware
+app.use(helmet());
+
+// Rate Limiting
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use('/api/', apiLimiter);
 
 // CORS Configuration
 const allowedOrigins = [
@@ -95,14 +109,4 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
-  
-  // Self-ping to keep Render instance awake
-  const https = require('https');
-  setInterval(() => {
-    https.get('https://society-backend-b004.onrender.com/api/health', (res) => {
-      console.log('Self-ping successful: Server is keeping itself awake ⚡');
-    }).on('error', (err) => {
-      console.error('Self-ping failed:', err.message);
-    });
-  }, 10 * 60 * 1000); // Ping every 10 minutes
 });
