@@ -23,19 +23,7 @@ connectDB();
 // Initialize Socket.io
 initializeSocket(server);
 
-// Security Middleware
-app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" }
-}));
-
-// Rate Limiting
-const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-app.use('/api/', apiLimiter);
+// Security Middleware removed temporarily for Vercel CORS fix
 
 // CORS Configuration
 const allowedOrigins = [
