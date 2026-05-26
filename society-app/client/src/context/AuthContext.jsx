@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import supabase from '../lib/supabase';
-import { getCurrentProfile } from '../lib/database';
+import api from '../utils/api';
+import { setSentryUser, captureError } from '../utils/sentry';
 
 const AuthContext = createContext();
 
@@ -10,44 +10,22 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [lastAuthAttempt, setLastAuthAttempt] = useState(0);
-  const AUTH_THROTTLE_MS = 2000;
 
   const loadUser = useCallback(async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        setUser(null);
+      const token = localStorage.getItem('token');
+      if (!token) {
         setLoading(false);
         return;
       }
-
-      const profile = await getCurrentProfile();
-      if (profile) {
-        // Map Supabase profile to the existing user shape the UI expects
-        setUser({
-          id: profile.id,
-          _id: profile.id, // backward compat
-          name: profile.name,
-          email: profile.email,
-          phone: profile.phone,
-          role: profile.role,
-          status: profile.status,
-          residentType: profile.resident_type,
-          avatar: profile.avatar,
-          isActive: profile.is_active,
-          societyId: profile.society ? profile.society : (profile.society_id || null),
-          flatId: profile.flat ? profile.flat : (profile.flat_id || null),
-          // Keep nested objects for pages that use societyId._id pattern
-          ...(profile.society && { societyId: { _id: profile.society.id, ...profile.society } }),
-          ...(profile.flat && { flatId: { _id: profile.flat.id, ...profile.flat } })
-        });
-      } else {
-        setUser(null);
-      }
+      const userData = await api.get('/api/auth/me');
+      setUser(userData);
+      setSentryUser(userData);
     } catch (err) {
-      console.warn('Session load failed:', err.message);
+      console.warn('Session load failed, clearing token:', err.message);
+      localStorage.removeItem('token');
       setUser(null);
+      setSentryUser(null);
     } finally {
       setLoading(false);
     }
@@ -56,187 +34,78 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     loadUser();
 
-    // Listen for auth state changes (login, logout, token refresh)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        await loadUser();
-      } else if (event === 'SIGNED_OUT') {
+    // Listen for storage changes (multi-tab logout sync)
+    const handleStorageChange = (e) => {
+      if (e.key === 'token' && !e.newValue) {
         setUser(null);
+      } else if (e.key === 'token' && e.newValue) {
+        loadUser();
       }
-    });
+    };
+    window.addEventListener('storage', handleStorageChange);
 
     // Visibility-based session refresh (fixes mobile background tab issues)
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        loadUser();
+        const token = localStorage.getItem('token');
+        if (token && !user) {
+          loadUser();
+        }
       }
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
-      subscription.unsubscribe();
+      window.removeEventListener('storage', handleStorageChange);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [loadUser]);
 
   const login = async (email, password) => {
     try {
-      const now = Date.now();
-      if (now - lastAuthAttempt < AUTH_THROTTLE_MS) {
-        throw new Error('Please wait a moment before trying again');
-      }
-      setLastAuthAttempt(now);
-      
       setError('');
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email: email.trim().toLowerCase(),
-        password
-      });
-      if (authError) {
-        if (authError.message.includes('Invalid login credentials')) {
-          throw new Error('Invalid email or password. Please check your credentials and try again.');
-        }
-        if (authError.message.includes('Network')) {
-          throw new Error('Network error. Please check your internet connection and try again.');
-        }
-        throw authError;
-      }
-
-      let profile = null;
-      try {
-        profile = await getCurrentProfile();
-      } catch (profileErr) {
-        console.warn('Profile fetch failed, using auth user data:', profileErr.message);
-      }
-
-      const mappedUser = {
-        id: authData.user.id,
-        _id: authData.user.id,
-        name: profile?.name || authData.user.email?.split('@')[0] || 'User',
-        email: profile?.email || authData.user.email || '',
-        phone: profile?.phone || '',
-        role: profile?.role || 'member',
-        status: profile?.status || 'approved',
-        residentType: profile?.resident_type || 'none',
-        avatar: profile?.avatar || '',
-        isActive: profile?.is_active ?? true,
-        ...(profile?.society && { societyId: { _id: profile.society.id, ...profile.society } }),
-        ...(profile?.flat && { flatId: { _id: profile.flat.id, ...profile.flat } })
-      };
-      setUser(mappedUser);
-      return { token: authData.session.access_token, user: mappedUser };
+      const data = await api.post('/api/auth/login', { email, password });
+      // Ensure token is persisted before setting user state
+      localStorage.setItem('token', data.token);
+      // Small delay to ensure localStorage writes are flushed on mobile
+      await new Promise(r => setTimeout(r, 50));
+      setUser(data.user);
+      setSentryUser(data.user);
+      return data;
     } catch (err) {
       const message = err.message || 'Login failed. Please try again.';
       setError(message);
+      captureError(err, { context: 'login', email });
       throw err;
     }
   };
 
   const register = async (userData) => {
     try {
-      const now = Date.now();
-      if (now - lastAuthAttempt < AUTH_THROTTLE_MS) {
-        throw new Error('Please wait a moment before trying again');
-      }
-      setLastAuthAttempt(now);
-      
       setError('');
-      const { name, email, phone, password, role, inviteCode, flatId, residentType } = userData;
-
-      // 1. Pre-check if email already exists in profiles
-      const { data: existingProfile } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', email.trim().toLowerCase())
-        .maybeSingle();
-
-      if (existingProfile) {
-        throw new Error('An account with this email already exists. Please sign in instead.');
-      }
-
-      // 2. Sign up with Supabase Auth
-      const { data, error: authError } = await supabase.auth.signUp({
-        email: email.trim().toLowerCase(),
-        password,
-        options: {
-          data: { name: name.trim(), phone: phone.trim() }
-        }
-      });
-      if (authError) {
-        if (authError.message.includes('already registered') || authError.message.includes('duplicate')) {
-          throw new Error('An account with this email already exists. Please sign in instead.');
-        }
-        if (authError.message.includes('429') || authError.message.includes('rate limit')) {
-          throw new Error('Too many signup requests. Please wait a moment and try again.');
-        }
-        throw authError;
-      }
-
-      if (!data || !data.user) {
-        throw new Error('Registration failed. This email may already be registered or pending verification. Please try logging in.');
-      }
-
-      const userId = data.user.id;
-
-      // Determine society_id from invite code for members
-      let societyId = null;
-      let status = 'approved';
-
-      if (role === 'member' && inviteCode) {
-        const { data: society, error: socErr } = await supabase
-          .from('societies')
-          .select('id')
-          .eq('invite_code', inviteCode.toUpperCase())
-          .single();
-        if (socErr || !society) throw new Error('Invalid invite code');
-        societyId = society.id;
-        status = 'pending';
-      }
-
-      // Update the auto-created profile with role, society, flat
-      await supabase
-        .from('profiles')
-        .update({
-          role: role || 'member',
-          society_id: societyId,
-          flat_id: flatId || null,
-          resident_type: residentType || 'none',
-          status
-        })
-        .eq('id', userId);
-
-      // Load full profile
-      const profile = await getCurrentProfile();
-      const mappedUser = {
-        id: profile.id,
-        _id: profile.id,
-        name: profile.name,
-        email: profile.email,
-        phone: profile.phone,
-        role: profile.role,
-        status: profile.status,
-        societyId: profile.society_id,
-        flatId: profile.flat_id
-      };
-      setUser(mappedUser);
-      return { token: data.session?.access_token, user: mappedUser };
+      const data = await api.post('/api/auth/register', userData);
+      localStorage.setItem('token', data.token);
+      await new Promise(r => setTimeout(r, 50));
+      setUser(data.user);
+      setSentryUser(data.user);
+      return data;
     } catch (err) {
       const message = err.message || 'Registration failed. Please try again.';
       setError(message);
+      captureError(err, { context: 'register' });
       throw err;
     }
   };
 
-  const logout = async () => {
-    await supabase.auth.signOut();
+  const logout = () => {
+    localStorage.removeItem('token');
     setUser(null);
+    setSentryUser(null);
     setError('');
   };
 
-  const clearError = () => setError('');
-
   return (
-    <AuthContext.Provider value={{ user, setUser, loading, error, setError, clearError, login, register, logout, loadUser }}>
+    <AuthContext.Provider value={{ user, setUser, loading, error, login, register, logout, loadUser }}>
       {children}
     </AuthContext.Provider>
   );

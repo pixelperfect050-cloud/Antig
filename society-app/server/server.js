@@ -1,4 +1,6 @@
 require('dotenv').config();
+const Sentry = require('@sentry/node');
+const { initSentry } = require('./src/config/sentry');
 const express = require('express');
 const cors = require('cors');
 const connectDB = require('./src/config/db');
@@ -7,6 +9,10 @@ const http = require('http');
 const { initializeSocket } = require('./src/services/socketService');
 
 const app = express();
+
+// Initialize Sentry (must be before any middleware)
+initSentry(app);
+
 const server = http.createServer(app);
 
 // Connect Database
@@ -59,20 +65,10 @@ app.use('/api/reports', require('./src/routes/report'));
 app.use('/api/payment-requests', require('./src/routes/paymentRequest'));
 app.use('/api/funds', require('./src/routes/fund'));
 app.use('/api/admin', require('./src/routes/admin'));
-app.use('/api/sheets', require('./src/routes/googleSheets'));
-app.use('/api/reminders', require('./src/routes/reminder'));
-
-// Start Reminder Scheduler
-const { startScheduler } = require('./src/services/schedulerService');
 
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString(), env: process.env.NODE_ENV });
-});
-
-// Lightweight ping endpoint for keep-alive
-app.get('/api/ping', (req, res) => {
-  res.json({ ping: 'pong', timestamp: Date.now() });
 });
 
 // Root endpoint
@@ -80,18 +76,33 @@ app.get('/', (req, res) => {
   res.json({ message: 'SocietySync API is running 🚀', version: '1.1.0' });
 });
 
+// Sentry error handler (must be before custom error handler)
+if (process.env.SENTRY_DSN) {
+  Sentry.setupExpressErrorHandler(app);
+}
+
 // Error handler
 app.use((err, req, res, next) => {
+  const eventId = res.sentry ? res.sentry : null;
   console.error(err.stack);
-  res.status(500).json({ message: 'Something went wrong!', error: err.message });
+  res.status(err.status || 500).json({ 
+    message: 'Something went wrong!', 
+    error: process.env.NODE_ENV === 'production' ? 'Internal server error' : err.message,
+    ...(eventId && { sentryEventId: eventId })
+  });
 });
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
   
-  // Start Reminder Scheduler
-  if (process.env.NODE_ENV !== 'test') {
-    startScheduler();
-  }
+  // Self-ping to keep Render instance awake
+  const https = require('https');
+  setInterval(() => {
+    https.get('https://society-backend-b004.onrender.com/api/health', (res) => {
+      console.log('Self-ping successful: Server is keeping itself awake ⚡');
+    }).on('error', (err) => {
+      console.error('Self-ping failed:', err.message);
+    });
+  }, 10 * 60 * 1000); // Ping every 10 minutes
 });

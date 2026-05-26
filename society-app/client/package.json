@@ -1,7 +1,7 @@
 {
   "name": "society-app-client",
   "private": true,
-  "version": "1.2.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -12,8 +12,9 @@
   },
   "dependencies": {
     "@capacitor/status-bar": "^8.0.2",
-    "@supabase/supabase-js": "^2.106.0",
+    "@sentry/react": "^8.30.0",
     "axios": "^1.16.1",
+    "logrocket": "^12.1.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-joyride": "^3.1.0",
@@ -24,6 +25,7 @@
     "@capacitor/android": "^8.3.1",
     "@capacitor/cli": "^8.3.1",
     "@capacitor/core": "^8.3.1",
+    "@sentry/vite-plugin": "^2.22.0",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",

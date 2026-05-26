@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import '../styles/funkiai.css';
+import { API_BASE } from '../lib/apiConfig';
 
 const PUBLIC_QUICK_ACTIONS = [
   { label: '✨ Features', msg: 'What features does SocietySync offer?' },
@@ -10,14 +11,12 @@ const PUBLIC_QUICK_ACTIONS = [
   { label: '📧 Contact', msg: 'How can I contact support?' },
 ];
 
-const API_BASE = (import.meta.env.VITE_API_URL || 'https://society-backend-b004.onrender.com').replace(/\/$/, '');
-
 const PublicFunkiAI = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
     {
       role: 'ai',
-      content: `Namaste! 👋\n\nMain **SocietySync Support** assistant hoon!\n\nMujhse society management, app features, pricing ya setup ke baare mein kuch bhi poochhein.\n\nKaise help karun?`,
+      content: `Namaste! 👋\n\nMain **FunkiAI** hoon — SocietySync ka smart assistant!\n\nMujhse poochho:\n• 📋 App features\n• 💰 Pricing plans\n• 📅 Demo booking\n• 🏠 Society setup\n• 📱 APK download\n\nKaise help karun?`,
       timestamp: new Date()
     }
   ]);
@@ -302,7 +301,7 @@ const PublicFunkiAI = () => {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
             </svg>
-            <span className="funkiai-trigger__badge">Help</span>
+            <span className="funkiai-trigger__badge">AI</span>
           </>
         )}
       </button>
@@ -324,7 +323,7 @@ const PublicFunkiAI = () => {
               <span className={`funkiai-avatar__status ${isTyping ? 'funkiai-avatar__status--typing' : ''}`} />
             </div>
             <div className="funkiai-header__info">
-              <h3>Support Assistant <span className="funkiai-header__public-badge">Support</span></h3>
+              <h3>FunkiAI <span className="funkiai-header__public-badge">Sales</span></h3>
               <p>{isTyping ? 'Thinking...' : isSpeaking ? '🔊 Speaking...' : 'Online • Ask me anything!'}</p>
             </div>
             <select
@@ -469,7 +468,7 @@ const PublicFunkiAI = () => {
           </div>
 
           <div className="funkiai-footer">
-            Powered by <strong>SocietySync Helper</strong>
+            Powered by <strong>FunkiAI</strong> • Gemini
           </div>
         </div>
       </div>

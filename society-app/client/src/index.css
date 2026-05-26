@@ -1171,7 +1171,7 @@ table, .table { width: 100%; border-collapse: collapse; }
    PUBLIC FUNKIAI BADGE
    ═══════════════════════════════════════════════════ */
 .funkiai-header--public {
-  background: linear-gradient(135deg, #059669, #064e3b) !important;
+  background: linear-gradient(135deg, #4f46e5, #7c3aed) !important;
 }
 .funkiai-header__public-badge {
   display: inline-block; background: rgba(255,255,255,.2); color: #fff;

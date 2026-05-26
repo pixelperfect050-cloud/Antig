@@ -5,7 +5,15 @@ import supabase from './supabase';
 // ============================================
 
 export async function getCurrentProfile() {
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { session } = {} } = await supabase.auth.getSession();
+  const sessionUser = session?.user;
+  let user = sessionUser;
+
+  if (!user) {
+    const { data: { user: authUser } = {} } = await supabase.auth.getUser();
+    user = authUser;
+  }
+
   if (!user) return null;
 
   const { data, error } = await supabase

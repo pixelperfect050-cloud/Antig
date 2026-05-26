@@ -1,33 +1,36 @@
+import { useEffect, Suspense, lazy } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { StatusBar } from '@capacitor/status-bar';
 import { useAuth } from './context/AuthContext';
 import Layout from './components/Layout';
-import LandingPage from './pages/LandingPage';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import ForgotPassword from './pages/ForgotPassword';
-import Dashboard from './pages/Dashboard';
-import Blocks from './pages/Blocks';
-import FlatGrid from './pages/FlatGrid';
-import FlatDetail from './pages/FlatDetail';
-import Payments from './pages/Payments';
-import Expenses from './pages/Expenses';
-import Reports from './pages/Reports';
-import Notifications from './pages/Notifications';
-import Settings from './pages/Settings';
-import SetupSociety from './pages/SetupSociety';
+import { initDiagnostics, cleanupDiagnostics } from './utils/diagnostics';
+import { initLogRocket } from './utils/logrocket';
+import { API_BASE } from './lib/apiConfig';
+const LandingPage = lazy(() => import('./pages/LandingPage'));
+const Login = lazy(() => import('./pages/Login'));
+const Register = lazy(() => import('./pages/Register'));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Blocks = lazy(() => import('./pages/Blocks'));
+const FlatGrid = lazy(() => import('./pages/FlatGrid'));
+const FlatDetail = lazy(() => import('./pages/FlatDetail'));
+const Payments = lazy(() => import('./pages/Payments'));
+const Expenses = lazy(() => import('./pages/Expenses'));
+const Reports = lazy(() => import('./pages/Reports'));
+const Notifications = lazy(() => import('./pages/Notifications'));
+const Settings = lazy(() => import('./pages/Settings'));
+const SetupSociety = lazy(() => import('./pages/SetupSociety'));
 
-import JoinSociety from './pages/JoinSociety';
-import PendingApproval from './pages/PendingApproval';
-import MemberRequests from './pages/MemberRequests';
-import PaymentVerification from './pages/PaymentVerification';
-import Funds from './pages/Funds';
-import PrivacyPolicy from './pages/PrivacyPolicy';
-import ReceiptView from './pages/ReceiptView';
-import AdminManagement from './pages/AdminManagement';
-import ActivityLog from './pages/ActivityLog';
-import DemoLeads from './pages/DemoLeads';
-import GoogleSheetsBackup from './pages/GoogleSheetsBackup';
+const JoinSociety = lazy(() => import('./pages/JoinSociety'));
+const PendingApproval = lazy(() => import('./pages/PendingApproval'));
+const MemberRequests = lazy(() => import('./pages/MemberRequests'));
+const PaymentVerification = lazy(() => import('./pages/PaymentVerification'));
+const Funds = lazy(() => import('./pages/Funds'));
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
+const ReceiptView = lazy(() => import('./pages/ReceiptView'));
+const AdminManagement = lazy(() => import('./pages/AdminManagement'));
+const ActivityLog = lazy(() => import('./pages/ActivityLog'));
+const DemoLeads = lazy(() => import('./pages/DemoLeads'));
 import FunkiAI from './components/FunkiAI';
 import PublicFunkiAI from './components/PublicFunkiAI';
 
@@ -56,14 +59,42 @@ const ProtectedRoute = ({ children, adminOnly = false }) => {
 function App() {
   const { user, loading } = useAuth();
 
-  // No backend ping needed - Supabase is always on
+  useEffect(() => {
+    initDiagnostics();
+    initLogRocket();
+    return () => cleanupDiagnostics();
+  }, []);
+
+  useEffect(() => {
+    // Hide the status bar for a game-like full screen experience
+    const hideStatusBar = async () => {
+      try {
+        await StatusBar.hide();
+      } catch (e) {
+        console.log('StatusBar not available');
+      }
+    };
+    hideStatusBar();
+
+    // Keep-alive ping to prevent Render backend from sleeping
+    const pingBackend = () => {
+      fetch(`${API_BASE}/api/health`)
+        .then(() => console.log('Backend pinged to keep it awake 🚀'))
+        .catch(err => console.error('Ping failed:', err));
+    };
+
+    // Ping immediately and then every 14 minutes
+    pingBackend();
+    const interval = setInterval(pingBackend, 14 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   if (loading) {
     return <div className="page-loader"><div className="spinner"></div></div>;
   }
 
   return (
-    <>
+    <Suspense fallback={<div className="page-loader"><div className="spinner"></div></div>}>
       <Routes>
         {/* Landing page — show only when NOT logged in */}
         <Route path="/" element={user ? <Navigate to="/dashboard" /> : <LandingPage />} />
@@ -103,14 +134,13 @@ function App() {
           <Route path="receipt/:paymentId" element={<ReceiptView />} />
           <Route path="admin-management" element={<ProtectedRoute adminOnly><AdminManagement /></ProtectedRoute>} />
           <Route path="activity-log" element={<ProtectedRoute adminOnly><ActivityLog /></ProtectedRoute>} />
-          <Route path="google-sheets-backup" element={<ProtectedRoute adminOnly><GoogleSheetsBackup /></ProtectedRoute>} />
           <Route path="demo-leads" element={<ProtectedRoute adminOnly><DemoLeads /></ProtectedRoute>} />
         </Route>
       </Routes>
 
       {/* FunkiAI: Public on landing, Smart AI inside app */}
       {user ? <FunkiAI /> : <PublicFunkiAI />}
-    </>
+    </Suspense>
   );
 }
 

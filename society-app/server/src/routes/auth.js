@@ -3,7 +3,6 @@ const router = express.Router();
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const { auth } = require('../middleware/auth');
-const googleSheetsService = require('../services/googleSheetsService');
 
 // Register
 router.post('/register', async (req, res) => {
@@ -54,17 +53,6 @@ router.post('/register', async (req, res) => {
         flatId: user.flatId
       }
     });
-
-    // Sync new member to Google Sheets (non-blocking)
-    if (societyId && user.status === 'pending') {
-      setImmediate(async () => {
-        try {
-          await googleSheetsService.syncOnEvent(societyId.toString(), 'member_added', user);
-        } catch (e) {
-          console.error('[Auth] Google Sheets sync error:', e.message);
-        }
-      });
-    }
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }

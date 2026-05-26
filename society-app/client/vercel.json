@@ -1,22 +1,11 @@
 {
-  "redirects": [
-    {
-      "source": "/:path*",
-      "has": [
-        {
-          "type": "host",
-          "value": "client-eight-roan-56.vercel.app"
-        }
-      ],
-      "destination": "https://societysync.vercel.app/:path*",
-      "permanent": true
+  "build": {
+    "env": {
+      "VITE_API_URL": "https://society-backend-b004.onrender.com"
     }
-  ],
+  },
   "rewrites": [
-    { "source": "/api/payments/:id/receipt", "destination": "/api/receipt-pdf?id=:id" },
-    { "source": "/api/sheets/:path*", "destination": "/api/sheets?path=:path*" },
-    { "source": "/api/ai/:path*", "destination": "/api/ai-chat?path=:path*" },
-    { "source": "/api/ai-chat", "destination": "/api/ai-chat.js" },
+    { "source": "/socket.io/:path*", "destination": "https://society-backend-b004.onrender.com/socket.io/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [

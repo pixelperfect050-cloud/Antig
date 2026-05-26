@@ -239,7 +239,7 @@ const ReceiptView = () => {
           <div className="receipt-qr">
             <div className="receipt-qr__box">
               <img 
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(`${window.location.origin}/receipt/${p._id}`)}`} 
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(`Receipt:${receiptNo}|Amount:${total}|Date:${paidDate.toISOString()}|Society:${s.name}`)}`} 
                 alt="QR Code" 
                 width="100" 
                 height="100"

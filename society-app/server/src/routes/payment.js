@@ -9,7 +9,6 @@ const { notifyFlatOwner, notifyAllUsers } = require('../utils/notificationHelper
 const { logActivity } = require('../services/activityLogger');
 const { generatePaymentReceipt } = require('../utils/pdfGenerator');
 const { emitToSociety } = require('../services/socketService');
-const googleSheetsService = require('../services/googleSheetsService');
 
 
 // Record payment (Manual Entry by Admin)
@@ -117,7 +116,7 @@ router.post('/', auth, adminOnly, async (req, res) => {
       metadata: { flatId, amount: mPaidAmount, month: mMonth, year: mYear }
     }).catch(() => {});
 
-    // ALL background tasks - socket, notifications, Google Sheets sync - run AFTER response
+    // ALL background tasks - socket, notifications - run AFTER response
     // These CANNOT cause any error for the user
     setImmediate(async () => {
       try {
@@ -145,13 +144,6 @@ router.post('/', auth, adminOnly, async (req, res) => {
           });
         } catch (notifErr) {
           console.error('[Payment] Notification error:', notifErr.message);
-        }
-
-        // Sync to Google Sheets (non-blocking)
-        try {
-          await googleSheetsService.syncOnEvent(societyId.toString(), isNew ? 'payment_recorded' : 'payment_updated', responsePayment);
-        } catch (sheetErr) {
-          console.error('[Payment] Google Sheets sync error:', sheetErr.message);
         }
       } catch (secondaryError) {
         console.error('[Payment] Background task error:', secondaryError.message);
@@ -261,7 +253,7 @@ router.put('/:id', auth, adminOnly, async (req, res) => {
     // Send response FIRST
     res.json(payment);
 
-    // Background: Notify flat owner and sync to Google Sheets (don't block response)
+    // Background: Notify flat owner (don't block response)
     setImmediate(async () => {
       try {
         const monthName = new Date(payment.year, payment.month - 1).toLocaleString('default', { month: 'long' });
@@ -272,11 +264,8 @@ router.put('/:id', auth, adminOnly, async (req, res) => {
           message: `Your payment for ${monthName} ${payment.year} has been updated. Paid: ₹${paidAmount}.`,
           type: 'success'
         });
-
-        // Sync to Google Sheets
-        await googleSheetsService.syncOnEvent(payment.societyId.toString(), 'payment_updated', payment);
       } catch (e) {
-        console.error('[Payment PUT] notification/sync error:', e.message);
+        console.error('[Payment PUT] notification error:', e.message);
       }
     });
   } catch (error) {
@@ -378,140 +367,4 @@ router.get('/:id/receipt', auth, async (req, res) => {
   }
 });
 
-// Send individual reminder (WhatsApp/SMS text generator & API dispatch)
-router.post('/:id/remind', auth, adminOnly, async (req, res) => {
-  try {
-    const payment = await Payment.findById(req.params.id);
-    if (!payment) return res.status(404).json({ message: 'Payment not found' });
-
-    const flat = await Flat.findById(payment.flatId);
-    if (!flat) return res.status(404).json({ message: 'Flat not found' });
-
-    const society = await Society.findById(payment.societyId);
-    const societyName = society ? society.name : 'SocietySync';
-    const upiId = (society && society.upiId) ? society.upiId : 'societysync@upi';
-
-    const phone = flat.isOccupied ? (flat.tenantPhone || flat.ownerPhone) : flat.ownerPhone;
-    const name = flat.isOccupied ? (flat.tenantName || flat.ownerName || 'Resident') : (flat.ownerName || 'Owner');
-    
-    if (!phone) {
-      return res.status(400).json({ message: 'No phone number available for this flat' });
-    }
-
-    const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-    const monthName = MONTHS[payment.month - 1];
-    const dueAmount = payment.amount - payment.paidAmount;
-
-    // Generate direct UPI payment deep link for mobile apps
-    const paymentLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(societyName)}&am=${dueAmount}&cu=INR&tn=Maint_${flat.number}_${monthName.slice(0,3)}`;
-
-    // Hindi dynamic message template as requested
-    const message = `नमस्ते ${name},\n\nफ्लैट ${flat.number} का ${monthName} का मेंटेनेंस ₹${dueAmount.toLocaleString('en-IN')} बकाया है।\n\nतुरंत भुगतान करने के लिए इस लिंक पर क्लिक करें (Direct UPI): ${paymentLink}\nया SocietySync App पर रसीद अपलोड करें: http://localhost:5173/payments\n\nकृपया जल्द भुगतान करें। धन्यवाद!`;
-    
-    const encodedMessage = encodeURIComponent(message);
-    const whatsappLink = `https://api.whatsapp.com/send?phone=91${phone.replace(/[^0-9]/g, '')}&text=${encodedMessage}`;
-
-    // Log the reminder activity
-    logActivity({
-      societyId: payment.societyId,
-      admin: req.user,
-      actionType: 'reminder_sent',
-      description: `Sent maintenance reminder to Flat ${flat.number} (${name})`,
-      targetType: 'payment',
-      targetId: payment._id,
-      metadata: { flat: flat.number, amount: dueAmount, phone }
-    }).catch(() => {});
-
-    res.json({
-      message: 'Reminder generated successfully',
-      phone,
-      recipientName: name,
-      dueAmount,
-      whatsappLink,
-      smsBody: message,
-      paymentLink
-    });
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-});
-
-// Bulk reminder endpoint
-router.post('/remind-all', auth, adminOnly, async (req, res) => {
-  try {
-    const { societyId, month, year } = req.body;
-    if (!societyId || !month || !year) {
-      return res.status(400).json({ message: 'Society ID, Month, and Year are required' });
-    }
-
-    // Find all pending or partial payments for this society
-    const pendingPayments = await Payment.find({
-      societyId: new mongoose.Types.ObjectId(societyId),
-      month: parseInt(month),
-      year: parseInt(year),
-      status: { $in: ['pending', 'partial'] }
-    }).populate('flatId');
-
-    const sentReminders = [];
-    const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-    const monthName = MONTHS[month - 1];
-    
-    const society = await Society.findById(societyId);
-    const societyName = society ? society.name : 'SocietySync';
-    const upiId = (society && society.upiId) ? society.upiId : 'societysync@upi';
-
-    for (const payment of pendingPayments) {
-      const flat = payment.flatId;
-      if (!flat) continue;
-
-      const phone = flat.isOccupied ? (flat.tenantPhone || flat.ownerPhone) : flat.ownerPhone;
-      const name = flat.isOccupied ? (flat.tenantName || flat.ownerName || 'Resident') : (flat.ownerName || 'Owner');
-
-      if (!phone) continue;
-
-      const dueAmount = payment.amount - payment.paidAmount;
-      const paymentLink = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(societyName)}&am=${dueAmount}&cu=INR&tn=Maint_${flat.number}_${monthName.slice(0,3)}`;
-      const smsBody = `नमस्ते ${name},\n\nफ्लैट ${flat.number} का ${monthName} का मेंटेनेंस ₹${dueAmount.toLocaleString('en-IN')} बकाया है। तुरंत UPI भुगतान करें: ${paymentLink}। कृपया जल्द भुगतान करें।\n\n- ${societyName}`;
-
-      sentReminders.push({
-        id: payment._id.toString(),
-        flat: flat.number,
-        name,
-        phone,
-        amount: dueAmount,
-        whatsappLink: `https://api.whatsapp.com/send?phone=91${phone.replace(/[^0-9]/g, '')}&text=${encodeURIComponent(smsBody)}`
-      });
-
-      // Notify flat owner internally (background)
-      notifyFlatOwner({
-        flatId: flat._id,
-        societyId,
-        title: 'Maintenance Dues Pending',
-        message: `Friendly reminder: Your maintenance dues of ₹${dueAmount} for ${monthName} ${year} are pending. Please pay soon.`,
-        type: 'warning'
-      }).catch(() => {});
-    }
-
-    // Log the activity
-    logActivity({
-      societyId,
-      admin: req.user,
-      actionType: 'bulk_reminder_sent',
-      description: `Dispatched bulk reminders to ${sentReminders.length} pending flats for ${monthName} ${year}`,
-      targetType: 'society',
-      targetId: societyId,
-      metadata: { count: sentReminders.length, month, year }
-    }).catch(() => {});
-
-    res.json({
-      message: `Successfully processed reminders for ${sentReminders.length} pending records`,
-      count: sentReminders.length,
-      reminders: sentReminders
-    });
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-});
-
 module.exports = router;
-

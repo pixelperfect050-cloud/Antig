@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import api from '../utils/api';
+import { API_BASE } from '../lib/apiConfig';
 
 const STATUS_MAP = {
   new: { label: 'New', color: '#6366f1', bg: '#eef2ff', icon: '🆕' },
@@ -19,8 +20,6 @@ const DemoLeads = () => {
   const [toast, setToast] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [editNotes, setEditNotes] = useState('');
-
-  const API_BASE = (import.meta.env.VITE_API_URL || 'https://society-backend-b004.onrender.com').replace(/\/$/, '');
 
   const fetchLeads = useCallback(async (page = 1) => {
     setLoading(true);

@@ -179,27 +179,15 @@ const FlatDetail = () => {
                 </div>
               </div>
               <div style={{ background: '#fff', padding: '1rem', borderRadius: '8px', display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
-                {/* Dynamic QR Code based on Society UPI ID */}
+                {/* Mock QR Code */}
                 <div style={{ width: '120px', height: '120px', background: '#f1f5f9', border: '8px solid #fff', borderRadius: '4px', position: 'relative', overflow: 'hidden' }}>
-                  <div style={{ 
-                    position: 'absolute', 
-                    inset: '10px', 
-                    background: `url("https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(
-                      `upi://pay?pa=${data.society?.upiId || 'society@upi'}&pn=${encodeURIComponent(data.society?.name || 'SocietySync')}&am=${totalDue}&tn=Maintenance`
-                    )}") center/cover no-repeat` 
-                  }}></div>
+                  <div style={{ position: 'absolute', inset: '10px', background: 'url("https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=upi://pay?pa=society@upi&am=' + totalDue + '&tn=Maintenance") center/cover no-repeat' }}></div>
                   <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', background: '#fff', padding: '4px', borderRadius: '4px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
                     🏘️
                   </div>
                 </div>
               </div>
-              <button 
-                className="btn btn--primary btn--full" 
-                style={{ borderRadius: '25px' }}
-                onClick={() => {
-                  window.location.href = `upi://pay?pa=${data.society?.upiId || 'society@upi'}&pn=${encodeURIComponent(data.society?.name || 'SocietySync')}&am=${totalDue}&tn=Maintenance`;
-                }}
-              >
+              <button className="btn btn--primary btn--full" style={{ borderRadius: '25px' }}>
                 Open PhonePe / GPay
               </button>
             </div>

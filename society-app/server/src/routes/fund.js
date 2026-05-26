@@ -7,7 +7,6 @@ const Block = require('../models/Block');
 const { auth, adminOnly } = require('../middleware/auth');
 const { notifyAllUsers, notifyFlatOwner, notifyAdmins } = require('../utils/notificationHelper');
 const { emitToSociety } = require('../services/socketService');
-const googleSheetsService = require('../services/googleSheetsService');
 
 // Create a new fund (admin)
 router.post('/', auth, adminOnly, async (req, res) => {
@@ -62,15 +61,6 @@ router.post('/', auth, adminOnly, async (req, res) => {
     emitToSociety(societyId.toString(), 'fund_created', {
       fund,
       message: `New fund: ${name}`
-    });
-
-    // Sync to Google Sheets
-    setImmediate(async () => {
-      try {
-        await googleSheetsService.syncOnEvent(societyId.toString(), 'fund_created', fund);
-      } catch (e) {
-        console.error('[Fund] Google Sheets sync error:', e.message);
-      }
     });
 
     res.status(201).json(fund);
@@ -259,15 +249,6 @@ router.put('/payment/:id/review', auth, adminOnly, async (req, res) => {
       });
 
       emitToSociety(societyId, 'fund_payment_approved', { fundPaymentId: fp._id });
-
-      // Sync to Google Sheets
-      setImmediate(async () => {
-        try {
-          await googleSheetsService.syncOnEvent(societyId, 'fund_payment_approved', fp);
-        } catch (e) {
-          console.error('[Fund Payment Review] Google Sheets sync error:', e.message);
-        }
-      });
     } else {
       fp.status = 'pending';
       fp.paidAmount = 0;

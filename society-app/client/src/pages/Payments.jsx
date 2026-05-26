@@ -21,10 +21,6 @@ const Payments = () => {
   const [showManualModal, setShowManualModal] = useState(false);
   const [showPayModal, setShowPayModal] = useState(false);
   const [showNewRequestModal, setShowNewRequestModal] = useState(false);
-  const [showReminderModal, setShowReminderModal] = useState(false);
-  const [pendingReminders, setPendingReminders] = useState([]);
-  const [selectedReminderIds, setSelectedReminderIds] = useState([]);
-  const [loadingReminders, setLoadingReminders] = useState(false);
   const [billForm, setBillForm] = useState({ amount: 3000 });
   const [saving, setSaving] = useState(false);
   const [blocks, setBlocks] = useState([]);
@@ -226,64 +222,6 @@ const Payments = () => {
 
   const formatCurrency = (amt) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amt || 0);
 
-  const triggerIndividualReminder = async (payment) => {
-    try {
-      const response = await api.post(`/api/payments/${payment._id}/remind`);
-      if (response.whatsappLink) {
-        window.open(response.whatsappLink, '_blank');
-        alert(`✅ WhatsApp reminder prepared for Flat ${response.flat || payment.flatId?.number || ''} (${response.recipientName})!\nOpening WhatsApp Web/App...`);
-      } else {
-        alert('✅ Reminder generated, but no WhatsApp link was returned.');
-      }
-    } catch (err) {
-      alert(`Error sending reminder: ${err.response?.data?.message || err.message}`);
-    }
-  };
-
-  const openBulkReminderModal = async () => {
-    setLoadingReminders(true);
-    setShowReminderModal(true);
-    try {
-      const sid = user?.societyId?._id || user?.societyId;
-      const response = await api.post('/api/payments/remind-all', {
-        societyId: sid,
-        month: monthFilter,
-        year: yearFilter
-      });
-      const remindersData = response.reminders || [];
-      setPendingReminders(remindersData);
-      setSelectedReminderIds(remindersData.map(r => r.flat)); // select all by default
-    } catch (err) {
-      alert(`Error gathering pending reminders: ${err.response?.data?.message || err.message}`);
-      setShowReminderModal(false);
-    } finally {
-      setLoadingReminders(false);
-    }
-  };
-
-  const toggleReminderSelection = (flatNum) => {
-    setSelectedReminderIds(prev => 
-      prev.includes(flatNum) ? prev.filter(item => item !== flatNum) : [...prev, flatNum]
-    );
-  };
-
-  const toggleSelectAll = () => {
-    if (selectedReminderIds.length === pendingReminders.length) {
-      setSelectedReminderIds([]);
-    } else {
-      setSelectedReminderIds(pendingReminders.map(r => r.flat));
-    }
-  };
-
-  const sendAllRemindersAutomatically = () => {
-    if (selectedReminderIds.length === 0) {
-      alert('⚠️ कृपया कम से कम एक फ्लैट का चयन करें!');
-      return;
-    }
-    alert(`📢 Auto-Reminder: Dispatched automated SMS reminders for ${selectedReminderIds.length} selected flats.\nAll selected residents have also received in-app system warning!`);
-    setShowReminderModal(false);
-  };
-
   const handleDownloadReceipt = async (p) => {
     try {
       await api.download(`/api/payments/${p._id}/receipt`, `Receipt_${p.month}_${p.year}_Flat_${p.flatId?.number || 'NA'}.pdf`);
@@ -312,7 +250,6 @@ const Payments = () => {
         </div>
         {isAdmin ? (
           <div className="btn-group">
-            <button className="btn btn--warning" onClick={openBulkReminderModal} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#eab308', color: '#1e1b4b', fontWeight: 'bold' }}>📢 Send Reminders</button>
             <button className="btn btn--primary" onClick={() => setShowBillModal(true)}>📄 Generate Bills</button>
             <button className="btn btn--success" onClick={openManualModal}>➕ Manual Entry</button>
           </div>
@@ -410,10 +347,6 @@ const Payments = () => {
                   <td>{p.paidDate ? new Date(p.paidDate).toLocaleDateString('en-IN') : '-'}</td>
                   <td>
                     <div className="btn-group">
-                      {/* Admin: Remind button */}
-                      {isAdmin && p.status !== 'paid' && (
-                        <button className="btn btn--sm btn--warning" onClick={() => triggerIndividualReminder(p)} style={{ fontSize: '.75rem', padding: '0.2rem 0.5rem', background: '#f59e0b', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }} title="Send Dues Reminder via WhatsApp/SMS">📢 Remind</button>
-                      )}
                       {/* Member: Pay button */}
                       {!isAdmin && p.status !== 'paid' && !hasPendingRequest(p.month, p.year) && (
                         <button className="btn btn--sm btn--primary" onClick={() => openPayModal(p)}>💰 Pay</button>
@@ -685,87 +618,6 @@ const Payments = () => {
             </button>
           </div>
         </form>
-      </Modal>
-
-      {/* WhatsApp/SMS Dues Reminder Modal */}
-      <Modal isOpen={showReminderModal} onClose={() => setShowReminderModal(false)} title="📢 Maintenance Dues Reminder (WhatsApp/SMS)">
-        <div className="modal-form">
-          <div className="payment-info-box" style={{ background: 'rgba(245, 158, 11, 0.05)', border: '1px solid rgba(245, 158, 11, 0.2)', padding: '1rem', borderRadius: '8px', marginBottom: '1rem' }}>
-            <p style={{ color: '#f59e0b', fontWeight: 'bold', margin: 0 }}>📢 One-Click Reminders for {MONTHS[monthFilter - 1]} {yearFilter}</p>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '0.5rem 0 0 0' }}>
-               जिन फ्लैट्स का मेंटेनेंस लंबित (pending) है, उन्हें आप यहाँ से एक क्लिक पर व्हाट्सएप पर संदेश भेज सकते हैं या एक बार में सभी को ऑटो-एसएमएस/इन-एप रिमाइंडर भेज सकते हैं।
-            </p>
-          </div>
-
-          {loadingReminders ? (
-            <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
-              <div className="spinner"></div>
-            </div>
-          ) : (
-            <>
-              <div style={{ maxHeight: '300px', overflowY: 'auto', marginBottom: '1.5rem', border: '1px solid var(--border)', borderRadius: '8px' }}>
-                <table className="table" style={{ fontSize: '0.85rem' }}>
-                  <thead>
-                    <tr>
-                      <th style={{ width: '40px', textAlign: 'center' }}>
-                        <input 
-                          type="checkbox" 
-                          checked={pendingReminders.length > 0 && selectedReminderIds.length === pendingReminders.length}
-                          onChange={toggleSelectAll}
-                          style={{ width: '16px', height: '16px', cursor: 'pointer' }}
-                        />
-                      </th>
-                      <th>Flat</th>
-                      <th>Resident</th>
-                      <th>Dues</th>
-                      <th>Contact</th>
-                      <th>Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pendingReminders.map((rem, idx) => (
-                      <tr key={idx} style={{ background: selectedReminderIds.includes(rem.flat) ? 'rgba(245, 158, 11, 0.02)' : 'transparent' }}>
-                        <td style={{ textAlign: 'center' }}>
-                          <input 
-                            type="checkbox" 
-                            checked={selectedReminderIds.includes(rem.flat)}
-                            onChange={() => toggleReminderSelection(rem.flat)}
-                            style={{ width: '16px', height: '16px', cursor: 'pointer' }}
-                          />
-                        </td>
-                        <td className="font-medium">{rem.flat}</td>
-                        <td>{rem.name}</td>
-                        <td style={{ color: '#ef4444', fontWeight: 'bold' }}>{formatCurrency(rem.amount)}</td>
-                        <td>{rem.phone}</td>
-                        <td>
-                          <a href={rem.whatsappLink} target="_blank" rel="noopener noreferrer" className="btn btn--sm btn--success" style={{ textDecoration: 'none', padding: '2px 8px', fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#10b981', color: '#fff', borderRadius: '4px', fontWeight: 'bold' }}>
-                            🟢 WhatsApp
-                          </a>
-                        </td>
-                      </tr>
-                    ))}
-                    {pendingReminders.length === 0 && (
-                      <tr>
-                        <td colSpan="6" className="text-center text-muted" style={{ padding: '2rem' }}>
-                          🎉 No pending dues for this month! All flats are paid.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              <div className="modal-actions">
-                <button type="button" className="btn btn--ghost" onClick={() => setShowReminderModal(false)}>Close</button>
-                {pendingReminders.length > 0 && (
-                  <button type="button" className="btn btn--primary" onClick={sendAllRemindersAutomatically} style={{ flex: 1, background: '#f59e0b', color: '#fff', fontWeight: 'bold' }}>
-                    📢 Send Selected ({selectedReminderIds.length}) (Auto-SMS & Warning)
-                  </button>
-                )}
-              </div>
-            </>
-          )}
-        </div>
       </Modal>
     </div>
   );

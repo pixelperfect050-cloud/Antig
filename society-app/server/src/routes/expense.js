@@ -5,7 +5,6 @@ const { auth, adminOnly } = require('../middleware/auth');
 const { notifyAllUsers } = require('../utils/notificationHelper');
 const { logActivity } = require('../services/activityLogger');
 const { emitToSociety } = require('../services/socketService');
-const googleSheetsService = require('../services/googleSheetsService');
 
 // Add expense
 router.post('/', auth, adminOnly, async (req, res) => {
@@ -42,15 +41,6 @@ router.post('/', auth, adminOnly, async (req, res) => {
       targetId: expense._id,
       metadata: { category: expense.category, amount: expense.amount }
     }).catch(() => {});
-
-    // Sync to Google Sheets
-    setImmediate(async () => {
-      try {
-        await googleSheetsService.syncOnEvent(expense.societyId.toString(), 'expense_added', expense);
-      } catch (e) {
-        console.error('[Expense] Google Sheets sync error:', e.message);
-      }
-    });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
@@ -124,15 +114,6 @@ router.put('/:id', auth, adminOnly, async (req, res) => {
       targetId: expense._id
     }).catch(() => {});
 
-    // Sync to Google Sheets
-    setImmediate(async () => {
-      try {
-        await googleSheetsService.syncOnEvent(expense.societyId.toString(), 'expense_updated', expense);
-      } catch (e) {
-        console.error('[Expense PUT] Google Sheets sync error:', e.message);
-      }
-    });
-
     res.json(expense);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -153,15 +134,6 @@ router.delete('/:id', auth, adminOnly, async (req, res) => {
       targetType: 'expense',
       targetId: expense._id
     }).catch(() => {});
-
-    // Sync to Google Sheets
-    setImmediate(async () => {
-      try {
-        await googleSheetsService.syncOnEvent(expense.societyId.toString(), 'expense_deleted', expense);
-      } catch (e) {
-        console.error('[Expense DELETE] Google Sheets sync error:', e.message);
-      }
-    });
 
     res.json({ message: 'Expense deleted' });
   } catch (error) {

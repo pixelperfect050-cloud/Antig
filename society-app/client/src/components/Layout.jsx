@@ -28,11 +28,10 @@ const Layout = () => {
     { path: '/reports', icon: '📈', label: 'Reports' },
     { path: '/admin-management', icon: '👑', label: 'Admin Management', adminOnly: true },
     { path: '/activity-log', icon: '📋', label: 'Activity Log', adminOnly: true },
-    { path: '/google-sheets-backup', icon: '📑', label: 'Sheet Backup', adminOnly: true },
-    { path: '/demo-leads', icon: '📊', label: 'Demo Leads', adminOnly: true, webOnly: true },
+    { path: '/demo-leads', icon: '📊', label: 'Demo Leads', adminOnly: true },
     { path: '/notifications', icon: '🔔', label: 'Notifications' },
     { path: '/settings', icon: '⚙️', label: 'Settings' },
-  ].filter(item => (!item.adminOnly || isAdmin) && (!item.webOnly || !window.Capacitor));
+  ].filter(item => !item.adminOnly || isAdmin);
 
   const [runTour, setRunTour] = useState(false);
 
@@ -99,17 +98,6 @@ const Layout = () => {
               <span className="nav-label">{item.label}</span>
             </NavLink>
           ))}
-          <a
-            href="/SocietySync.apk"
-            download
-            className="nav-item"
-            id="nav-apk-download"
-            style={{ opacity: 0.9, background: 'rgba(79, 70, 229, 0.15)', border: '1px solid rgba(79, 70, 229, 0.25)', marginTop: '0.5rem' }}
-            onClick={() => setSidebarOpen(false)}
-          >
-            <span className="nav-icon">📱</span>
-            <span className="nav-label" style={{ fontWeight: '600' }}>Download APK</span>
-          </a>
         </nav>
 
         <div className="sidebar-footer">

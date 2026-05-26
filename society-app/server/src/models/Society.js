@@ -70,52 +70,6 @@ const societySchema = new mongoose.Schema({
   totalFlats: {
     type: Number,
     default: 0
-  },
-  googleSheetId: {
-    type: String,
-    default: ''
-  },
-  googleSheetUrl: {
-    type: String,
-    default: ''
-  },
-  googleFolderUrl: {
-    type: String,
-    default: ''
-  },
-  sheetCreatedAt: {
-    type: Date
-  },
-  sheetEnabled: {
-    type: Boolean,
-    default: false
-  },
-  lastSyncedAt: {
-    type: Date
-  },
-  subscriptionTier: {
-    type: String,
-    enum: ['free', 'premium'],
-    default: 'free'
-  },
-  subscriptionPlan: {
-    type: String,
-    enum: ['fixed', 'per_flat', 'none'],
-    default: 'none'
-  },
-  subscriptionExpiry: {
-    type: Date
-  },
-  trialExpiry: {
-    type: Date
-  },
-  trialActivated: {
-    type: Boolean,
-    default: true
-  },
-  razorpayPaymentId: {
-    type: String,
-    default: ''
   }
 }, { timestamps: true });
 

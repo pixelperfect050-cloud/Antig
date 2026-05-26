@@ -1,11 +1,11 @@
 const express = require('express');
 const router = express.Router();
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { auth } = require('../middleware/auth');
 const { getMemberContext, getAdminContext, detectIntent } = require('../services/aiDataService');
 const DemoLead = require('../models/DemoLead');
 
-// Gemini disabled due to quota - using smart fallback with real DB data only
-const GEMINI_ENABLED = false;
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'MOCK_KEY');
 
 // ═══════════════════════════════════════════════════
 // FALLBACK RESPONSES (when Gemini API is unavailable)
@@ -237,9 +237,44 @@ router.post('/public-chat', async (req, res) => {
     return res.status(400).json({ response: "Please send a message to get started! 💬" });
   }
 
-  // Using smart fallback with real database data - Gemini disabled due to quota
-  const response = getPublicFallback(message, language);
-  res.json({ response, isDemoBooking: false, usingFallback: true });
+  // Check if this is a demo booking submission
+  const demoData = extractDemoData(message, conversationHistory);
+
+  if (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === 'MOCK_KEY') {
+    return res.json({ 
+      response: getPublicFallback(message, language),
+      isDemoBooking: false 
+    });
+  }
+
+  try {
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.0-flash",
+      generationConfig: { temperature: 0.8, topP: 0.9, topK: 40, maxOutputTokens: 500 }
+    });
+
+    // Build conversation context
+    const chatHistory = conversationHistory.slice(-6).map(msg => ({
+      role: msg.role === 'ai' ? 'model' : 'user',
+      parts: [{ text: msg.content }]
+    }));
+
+    const prompt = `${getPublicSystemPrompt(language)}
+
+CONVERSATION CONTEXT: This visitor is browsing the SocietySync landing page and wants to learn more.
+
+USER MESSAGE: ${message}
+
+Respond helpfully and conversationally:`;
+
+    const result = await model.generateContent(prompt);
+    const text = result.response.text();
+
+    res.json({ response: text, isDemoBooking: false });
+  } catch (error) {
+    console.error('Public AI Error:', error.message);
+    res.json({ response: getPublicFallback(message, language), isDemoBooking: false });
+  }
 });
 
 // ═══════════════════════════════════════════════════
@@ -264,24 +299,22 @@ router.post('/demo-lead', async (req, res) => {
     });
 
     // Push to Google Sheets (non-blocking)
-    const OLD_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbzgl7Nu5jwHKpkkJ-uX2I3Rv8IYTcSPz4exMUy0pQlbm9qmL8Cq4cceMXkx1m6kkhBO/exec';
-    const NEW_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbxycpBqrh3loOZiw3nc9G204WTdlIe2pPfQlXrRHeJPgvvyvhvw42LO5Sw7PijZHvVB_A/exec';
-    const sheetWebhook = (!process.env.GOOGLE_SHEET_WEBHOOK || process.env.GOOGLE_SHEET_WEBHOOK.trim() === '' || process.env.GOOGLE_SHEET_WEBHOOK === OLD_WEBHOOK_URL)
-      ? NEW_WEBHOOK_URL
-      : process.env.GOOGLE_SHEET_WEBHOOK;
+    const sheetWebhook = process.env.GOOGLE_SHEET_WEBHOOK;
     if (sheetWebhook) {
-      const axios = require('axios');
-      axios.post(sheetWebhook, {
-        name,
-        mobile,
-        societyName: societyName || '',
-        numberOfFlats: numberOfFlats || 0,
-        city: city || '',
-        preferredDemoTime: preferredDemoTime || '',
-        source: 'ai_chat',
-        bookedAt: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
-      }).then(() => console.log('Successfully pushed to Google Sheets'))
-        .catch(err => console.error('Google Sheet push error:', err.message));
+      fetch(sheetWebhook, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          mobile,
+          societyName: societyName || '',
+          numberOfFlats: numberOfFlats || 0,
+          city: city || '',
+          preferredDemoTime: preferredDemoTime || '',
+          source: 'ai_chat',
+          bookedAt: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })
+        })
+      }).catch(err => console.error('Google Sheet push error:', err.message));
     }
 
     res.json({ 
@@ -321,9 +354,34 @@ router.post(['/', '/chat'], auth, async (req, res) => {
     userContext = { role: user.role, name: user.name, error: 'Could not fetch live data' };
   }
 
-  // Using smart fallback with real DB data - Gemini disabled due to quota
-  const fallback = getSmartFallback(message, language, userContext);
-  res.json({ response: fallback, usingFallback: true });
+  if (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === 'MOCK_KEY') {
+    const fallback = getSmartFallback(message, language, userContext);
+    return res.json({ response: fallback });
+  }
+
+  try {
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.0-flash",
+      generationConfig: { temperature: 0.7, topP: 0.9, topK: 40, maxOutputTokens: 600 }
+    });
+
+    const prompt = `${getSmartSystemPrompt(language, userContext)}
+
+USER MESSAGE: ${message}
+
+Respond using the real data above. Be helpful and conversational:`;
+
+    const result = await model.generateContent(prompt);
+    const text = result.response.text();
+
+    res.json({ response: text });
+  } catch (error) {
+    console.error('Gemini Error:', error.message);
+
+    // Fallback gracefully with real data
+    const fallback = getSmartFallback(message, language, userContext);
+    res.json({ response: fallback });
+  }
 });
 
 // ═══════════════════════════════════════════════════

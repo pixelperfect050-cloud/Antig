@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 import { useAuth } from './AuthContext';
+import { captureError, addBreadcrumb } from '../utils/sentry';
+import { SOCKET_URL } from '../lib/apiConfig';
 
 const SocketContext = createContext();
 
@@ -13,8 +15,7 @@ export const SocketProvider = ({ children }) => {
   useEffect(() => {
     let newSocket;
     if (user && user.societyId) {
-      // Use env variable or default to local server port 5001
-      const socketUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+      const socketUrl = SOCKET_URL;
       
       try {
         newSocket = io(socketUrl, {
@@ -31,6 +32,7 @@ export const SocketProvider = ({ children }) => {
 
         newSocket.on('connect_error', (err) => {
           console.error('Socket connection error:', err.message);
+          captureError(err, { context: 'socket_connect_error', socketUrl });
         });
 
         setSocket(newSocket);

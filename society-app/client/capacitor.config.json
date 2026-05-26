@@ -3,7 +3,7 @@
   "appName": "SocietySync",
   "webDir": "dist",
   "server": {
-    "url": "https://societysync-app.vercel.app",
+    "url": "https://client-eight-roan-56.vercel.app",
     "cleartext": true
   },
   "android": {
