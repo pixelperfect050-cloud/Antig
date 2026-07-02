@@ -9,6 +9,7 @@ const { notifyFlatOwner, notifyAllUsers } = require('../utils/notificationHelper
 const { logActivity } = require('../services/activityLogger');
 const { generatePaymentReceipt } = require('../utils/pdfGenerator');
 const { emitToSociety } = require('../services/socketService');
+const { updateFlatStatus } = require('../utils/flatStatusHelper');
 
 
 // Record payment (Manual Entry by Admin)
@@ -87,17 +88,8 @@ router.post('/', auth, adminOnly, async (req, res) => {
       await payment.save();
     }
 
-    // Update flat's current month status BEFORE sending response
-    // This ensures the block view shows green immediately
-    try {
-      const now = new Date();
-      if (mMonth === (now.getMonth() + 1) && mYear === now.getFullYear()) {
-        console.log(`[Payment] Updating flat ${flatId} status to: ${payment.status}`);
-        await Flat.findByIdAndUpdate(flatId, { currentMonthStatus: payment.status });
-      }
-    } catch (flatUpdateErr) {
-      console.error('[Payment] Non-critical: flat status update failed:', flatUpdateErr.message);
-    }
+    // Update flat's overall status to reflect all pending dues
+    await updateFlatStatus(flatId);
 
     // Send success response IMMEDIATELY
     const responsePayment = payment.toObject();
@@ -230,14 +222,7 @@ router.put('/:id', auth, adminOnly, async (req, res) => {
     await payment.save();
 
     // Update flat status BEFORE response
-    try {
-      const now = new Date();
-      if (payment.month === (now.getMonth() + 1) && payment.year === now.getFullYear()) {
-        await Flat.findByIdAndUpdate(payment.flatId, { currentMonthStatus: payment.status });
-      }
-    } catch (flatErr) {
-      console.error('[Payment PUT] flat status update error:', flatErr.message);
-    }
+    await updateFlatStatus(payment.flatId);
 
     // Log activity
     logActivity({

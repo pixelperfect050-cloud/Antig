@@ -7,6 +7,7 @@ const User = require('../models/User');
 const { auth, adminOnly } = require('../middleware/auth');
 const { notifyFlatOwner, notifyAllUsers, notifyAdmins } = require('../utils/notificationHelper');
 const { emitToSociety } = require('../services/socketService');
+const { updateFlatStatus } = require('../utils/flatStatusHelper');
 
 // Member submits a payment request
 router.post('/', auth, async (req, res) => {
@@ -167,15 +168,8 @@ router.put('/:id/review', auth, adminOnly, async (req, res) => {
         await payment.save();
       }
 
-      // Update flat current month status
-      try {
-        const now = new Date();
-        if (payment.month === (now.getMonth() + 1) && payment.year === now.getFullYear()) {
-          await Flat.findByIdAndUpdate(request.flatId, { currentMonthStatus: payment.status });
-        }
-      } catch (flatErr) {
-        console.error('[PaymentRequest] flat status update error:', flatErr.message);
-      }
+      // Update flat's overall status to reflect all pending dues
+      await updateFlatStatus(request.flatId);
 
       request.paymentId = payment._id;
       await request.save();
