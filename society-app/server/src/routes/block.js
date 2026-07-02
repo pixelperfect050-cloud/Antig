@@ -54,19 +54,29 @@ router.get('/public/:societyId', async (req, res) => {
 // Get all blocks of a society
 router.get('/society/:societyId', auth, async (req, res) => {
   try {
+    // Auto-run monthly status reset check
+    try {
+      const { checkAndResetMonthlyStatuses } = require('../services/monthlyResetService');
+      await checkAndResetMonthlyStatuses();
+    } catch (resetErr) {
+      console.error('[BlocksGet] Monthly reset check failed:', resetErr.message);
+    }
+
     const blocks = await Block.find({ societyId: req.params.societyId });
 
     // Get flat counts and status summary for each block
     const blocksWithStats = await Promise.all(
       blocks.map(async (block) => {
         const flats = await Flat.find({ blockId: block._id });
-        const paid = flats.filter(f => f.currentMonthStatus === 'paid').length;
-        const pending = flats.filter(f => f.currentMonthStatus === 'pending').length;
-        const partial = flats.filter(f => f.currentMonthStatus === 'partial').length;
+        const occupied = flats.filter(f => f.isOccupied && f.ownerName !== 'Vacant');
+        const vacant = flats.length - occupied.length;
+        const paid = occupied.filter(f => f.currentMonthStatus === 'paid').length;
+        const pending = occupied.filter(f => f.currentMonthStatus === 'pending').length;
+        const partial = occupied.filter(f => f.currentMonthStatus === 'partial').length;
 
         return {
           ...block.toJSON(),
-          flatStats: { total: flats.length, paid, pending, partial }
+          flatStats: { total: flats.length, paid, pending, partial, vacant }
         };
       })
     );

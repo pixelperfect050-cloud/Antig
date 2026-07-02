@@ -8,6 +8,14 @@ const { auth, adminOnly } = require('../middleware/auth');
 // Monthly report
 router.get('/monthly/:societyId', auth, async (req, res) => {
   try {
+    // Auto-run monthly status reset check
+    try {
+      const { checkAndResetMonthlyStatuses } = require('../services/monthlyResetService');
+      await checkAndResetMonthlyStatuses();
+    } catch (resetErr) {
+      console.error('[Report] Monthly reset check failed:', resetErr.message);
+    }
+
     const { month, year } = req.query;
     const m = parseInt(month) || new Date().getMonth() + 1;
     const y = parseInt(year) || new Date().getFullYear();

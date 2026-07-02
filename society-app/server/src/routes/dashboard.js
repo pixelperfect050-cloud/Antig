@@ -14,6 +14,15 @@ const { auth } = require('../middleware/auth');
 router.get('/stats/:societyId', auth, async (req, res) => {
   try {
     const societyId = req.params.societyId;
+    
+    // Auto-run monthly status reset check
+    try {
+      const { checkAndResetMonthlyStatuses } = require('../services/monthlyResetService');
+      await checkAndResetMonthlyStatuses();
+    } catch (resetErr) {
+      console.error('[DashboardStats] Monthly reset check failed:', resetErr.message);
+    }
+
     const now = new Date();
     const currentMonth = now.getMonth() + 1;
     const currentYear = now.getFullYear();

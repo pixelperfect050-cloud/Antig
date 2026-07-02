@@ -66,6 +66,14 @@ const flatSchema = new mongoose.Schema({
     type: String,
     enum: ['paid', 'pending', 'partial'],
     default: 'pending'
+  },
+  currentMonth: {
+    type: Number,
+    default: () => new Date().getMonth() + 1
+  },
+  currentYear: {
+    type: Number,
+    default: () => new Date().getFullYear()
   }
 }, { timestamps: true });
 

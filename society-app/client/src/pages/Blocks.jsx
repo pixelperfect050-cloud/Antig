@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Modal from '../components/Modal';
 import api from '../utils/api';
+import '../styles/blocks-flats.css';
 
 const Blocks = () => {
   const { user } = useAuth();
@@ -47,6 +48,18 @@ const Blocks = () => {
     }
   };
 
+  // Compute totals across all blocks
+  const totals = blocks.reduce((acc, b) => {
+    const s = b.flatStats || { total: 0, paid: 0, pending: 0, partial: 0 };
+    acc.total   += s.total;
+    acc.paid    += s.paid;
+    acc.pending += s.pending;
+    acc.partial += s.partial;
+    return acc;
+  }, { total: 0, paid: 0, pending: 0, partial: 0 });
+
+  const overallPct = totals.total > 0 ? Math.round((totals.paid / totals.total) * 100) : 0;
+
   if (loading) return <div className="page-loader"><div className="spinner"></div></div>;
 
   return (
@@ -54,7 +67,17 @@ const Blocks = () => {
       <div className="page-header">
         <div>
           <h1 className="page-title">Blocks & Flats</h1>
-          <p className="page-subtitle">Select a block to view flats</p>
+          <p className="page-subtitle">
+            {blocks.length} Block{blocks.length !== 1 ? 's' : ''} • {totals.total} Total Flats
+            {overallPct > 0 && (
+              <span className={`bf-collection-pct ${
+                overallPct >= 75 ? 'bf-collection-pct--good' :
+                overallPct >= 40 ? 'bf-collection-pct--mid' : 'bf-collection-pct--low'
+              }`} style={{ marginLeft: '0.75rem' }}>
+                {overallPct}% paid
+              </span>
+            )}
+          </p>
         </div>
         {isAdmin && (
           <button className="btn btn--primary" onClick={() => setShowModal(true)} id="add-block-btn">
@@ -63,47 +86,100 @@ const Blocks = () => {
         )}
       </div>
 
+      {/* Society-wide summary */}
+      {blocks.length > 0 && (
+        <div className="bf-summary" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))' }}>
+          <div className="bf-summary-card">
+            <div className="bf-summary-icon bf-summary-icon--blue">🏢</div>
+            <div className="bf-summary-info">
+              <span className="bf-summary-label">Total Flats</span>
+              <span className="bf-summary-value">{totals.total}</span>
+            </div>
+          </div>
+          <div className="bf-summary-card">
+            <div className="bf-summary-icon bf-summary-icon--green">✓</div>
+            <div className="bf-summary-info">
+              <span className="bf-summary-label">Paid</span>
+              <span className="bf-summary-value">{totals.paid}</span>
+            </div>
+          </div>
+          <div className="bf-summary-card">
+            <div className="bf-summary-icon bf-summary-icon--red">⏳</div>
+            <div className="bf-summary-info">
+              <span className="bf-summary-label">Pending</span>
+              <span className="bf-summary-value">{totals.pending}</span>
+            </div>
+          </div>
+          <div className="bf-summary-card">
+            <div className="bf-summary-icon bf-summary-icon--amber">◐</div>
+            <div className="bf-summary-info">
+              <span className="bf-summary-label">Partial</span>
+              <span className="bf-summary-value">{totals.partial}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {blocks.length === 0 ? (
-        <div className="empty-state">
-          <div className="empty-icon">🏗️</div>
-          <h2>No blocks yet</h2>
+        <div className="bf-empty">
+          <div className="bf-empty-icon">🏗️</div>
+          <h3>No blocks yet</h3>
           <p>Add your first block to get started</p>
-          {isAdmin && <button className="btn btn--primary" onClick={() => setShowModal(true)}>+ Add Block</button>}
+          {isAdmin && <button className="btn btn--primary" onClick={() => setShowModal(true)} style={{ marginTop: '1rem' }}>+ Add Block</button>}
         </div>
       ) : (
-        <div className="blocks-grid">
+        <div className="bf-blocks-grid">
           {blocks.map(block => {
-            const stats = block.flatStats || { total: 0, paid: 0, pending: 0, partial: 0 };
-            const paidPercent = stats.total ? Math.round((stats.paid / stats.total) * 100) : 0;
+            const s = block.flatStats || { total: 0, paid: 0, pending: 0, partial: 0 };
+            const vacant = s.total - s.paid - s.pending - s.partial;
+            const paidPct = s.total ? Math.round((s.paid / s.total) * 100) : 0;
 
             return (
-              <div key={block._id} className="block-card" onClick={() => navigate(`/blocks/${block._id}/flats`)}
-                id={`block-${block.name}`}>
-                <div className="block-card__header">
-                  <div className="block-card__name">Block {block.name}</div>
-                  <div className="block-card__icon">🏢</div>
-                </div>
-                <div className="block-card__info">
-                  <span>{block.totalFloors} Floors</span>
-                  <span>•</span>
-                  <span>{stats.total} Flats</span>
-                </div>
-
-                {/* Mini progress ring */}
-                <div className="block-card__progress">
-                  <svg className="progress-ring" viewBox="0 0 80 80">
-                    <circle className="progress-ring__bg" cx="40" cy="40" r="32" />
-                    <circle className="progress-ring__fill" cx="40" cy="40" r="32"
-                      strokeDasharray={`${paidPercent * 2.01} ${201 - paidPercent * 2.01}`}
-                      strokeDashoffset="50" />
-                  </svg>
-                  <span className="progress-ring__text">{paidPercent}%</span>
+              <div
+                key={block._id}
+                className="bf-block-card"
+                onClick={() => navigate(`/blocks/${block._id}/flats`)}
+                id={`block-${block.name}`}
+              >
+                <div className="bf-block-top">
+                  <div>
+                    <div className="bf-block-name">Block {block.name}</div>
+                    {block.description && (
+                      <div style={{ fontSize: '0.78rem', color: '#9CA3AF', marginTop: '0.15rem' }}>
+                        {block.description}
+                      </div>
+                    )}
+                  </div>
+                  <div className="bf-block-icon">🏢</div>
                 </div>
 
-                <div className="block-card__stats">
-                  <span className="status-dot status-dot--paid">{stats.paid} Paid</span>
-                  <span className="status-dot status-dot--pending">{stats.pending} Due</span>
-                  <span className="status-dot status-dot--partial">{stats.partial} Partial</span>
+                <div className="bf-block-info">
+                  <span>📐 {block.totalFloors} Floors</span>
+                  <span>🚪 {s.total} Flats</span>
+                </div>
+
+                {/* Progress bar */}
+                <div className="bf-block-progress">
+                  <div className="bf-block-progress-fill" style={{ width: `${paidPct}%` }}></div>
+                </div>
+
+                {/* Stats row */}
+                <div className="bf-block-stats">
+                  <div className="bf-block-stat bf-block-stat--paid">
+                    <span className="bf-block-stat-dot"></span>{s.paid} Paid
+                  </div>
+                  <div className="bf-block-stat bf-block-stat--pending">
+                    <span className="bf-block-stat-dot"></span>{s.pending} Due
+                  </div>
+                  <div className="bf-block-stat bf-block-stat--partial">
+                    <span className="bf-block-stat-dot"></span>{s.partial} Partial
+                  </div>
+                  {vacant > 0 && (
+                    <div className="bf-block-stat bf-block-stat--vacant">
+                      <span className="bf-block-stat-dot"></span>{vacant} Vacant
+                    </div>
+                  )}
+                  <span className="bf-block-pct">{paidPct}%</span>
                 </div>
               </div>
             );

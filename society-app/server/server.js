@@ -18,7 +18,15 @@ initSentry(app);
 const server = http.createServer(app);
 
 // Connect Database
-connectDB();
+connectDB().then(() => {
+  try {
+    const { checkAndResetMonthlyStatuses } = require('./src/services/monthlyResetService');
+    checkAndResetMonthlyStatuses();
+    setInterval(checkAndResetMonthlyStatuses, 3600000); // Check every hour
+  } catch (err) {
+    console.error('Failed to start monthly reset service:', err.message);
+  }
+});
 
 // Initialize Socket.io
 initializeSocket(server);

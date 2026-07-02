@@ -70,6 +70,14 @@ const societySchema = new mongoose.Schema({
   totalFlats: {
     type: Number,
     default: 0
+  },
+  lastPaymentResetMonth: {
+    type: Number,
+    default: 0
+  },
+  lastPaymentResetYear: {
+    type: Number,
+    default: 0
   }
 }, { timestamps: true });
 

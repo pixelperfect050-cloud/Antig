@@ -19,6 +19,14 @@ router.get('/public/block/:blockId', async (req, res) => {
 // Get flats of a block
 router.get('/block/:blockId', auth, async (req, res) => {
   try {
+    // Auto-run monthly status reset check
+    try {
+      const { checkAndResetMonthlyStatuses } = require('../services/monthlyResetService');
+      await checkAndResetMonthlyStatuses();
+    } catch (resetErr) {
+      console.error('[FlatsGet] Monthly reset check failed:', resetErr.message);
+    }
+
     const flats = await Flat.find({ blockId: req.params.blockId }).sort({ floor: 1, number: 1 });
     res.json(flats);
   } catch (error) {
