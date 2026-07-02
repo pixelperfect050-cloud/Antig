@@ -32,7 +32,8 @@ async function updateFlatStatus(flatId) {
       });
 
       if (!currentMonthBill) {
-         newStatus = 'paid'; 
+         // Bill not generated or paid for current month yet. Must be pending.
+         newStatus = 'pending'; 
       } else {
          newStatus = currentMonthBill.status;
       }
