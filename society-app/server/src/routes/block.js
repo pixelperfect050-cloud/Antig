@@ -68,7 +68,7 @@ router.get('/society/:societyId', auth, async (req, res) => {
     const blocksWithStats = await Promise.all(
       blocks.map(async (block) => {
         const flats = await Flat.find({ blockId: block._id });
-        const occupied = flats.filter(f => f.isOccupied && f.ownerName !== 'Vacant');
+        const occupied = flats.filter(f => f.isOccupied);
         const vacant = flats.length - occupied.length;
         const paid = occupied.filter(f => f.currentMonthStatus === 'paid').length;
         const pending = occupied.filter(f => f.currentMonthStatus === 'pending').length;

@@ -37,8 +37,7 @@ const checkAndResetMonthlyStatuses = async () => {
         const result = await Flat.updateMany(
           {
             societyId: society._id,
-            isOccupied: true,
-            ownerName: { $ne: 'Vacant' }
+            isOccupied: true
           },
           {
             currentMonthStatus: 'pending',

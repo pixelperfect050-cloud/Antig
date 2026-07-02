@@ -10,7 +10,7 @@ import '../styles/blocks-flats.css';
  * Vacant flats always show as 'vacant' regardless of currentMonthStatus.
  */
 const getEffectiveStatus = (flat) => {
-  if (!flat.isOccupied || flat.ownerName === 'Vacant') return 'vacant';
+  if (!flat.isOccupied) return 'vacant';
   return flat.currentMonthStatus || 'pending';
 };
 
@@ -117,7 +117,7 @@ const FlatGrid = () => {
   // ── Computed: summary statistics ────────────────────────────
   const stats = useMemo(() => {
     const total    = flats.length;
-    const occupied = flats.filter(f => f.isOccupied && f.ownerName !== 'Vacant').length;
+    const occupied = flats.filter(f => f.isOccupied).length;
     const vacant   = total - occupied;
     const paid     = flats.filter(f => getEffectiveStatus(f) === 'paid').length;
     const pending  = flats.filter(f => getEffectiveStatus(f) === 'pending').length;
@@ -328,7 +328,7 @@ const FlatGrid = () => {
                       </div>
 
                       <div className="bf-flat-owner">
-                        {flat.isOccupied && flat.ownerName !== 'Vacant'
+                        {flat.isOccupied
                           ? flat.ownerName
                           : 'Vacant'}
                       </div>
