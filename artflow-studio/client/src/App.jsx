@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
+import ForgotPassword from './pages/ForgotPassword';
 import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import CreateJob from './pages/CreateJob';
@@ -30,6 +31,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/signup" element={<Signup />} />
       <Route path="/request-quote" element={<RequestQuote />} />
       <Route path="/services/:slug" element={<ServiceDetail />} />

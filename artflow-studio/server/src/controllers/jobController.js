@@ -10,6 +10,7 @@ exports.createJob = async (req, res) => {
       filename: f.filename,
       originalName: f.originalname,
       path: f.path,
+      url: f.path, // Cloudinary URL
       size: f.size,
       mimetype: f.mimetype,
     }));

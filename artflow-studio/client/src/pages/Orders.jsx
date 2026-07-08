@@ -77,13 +77,10 @@ export default function Orders() {
 
   const handleDownload = async (orderId, filename) => {
     try {
-      const r = await api.get(`/orders/${orderId}/download/${filename}`, {
-        responseType: 'blob'
-      });
-      const a = document.createElement('a');
-      a.href = window.URL.createObjectURL(r.data);
-      a.download = filename;
-      a.click();
+      // The backend endpoint redirects to the Cloudinary URL
+      const token = localStorage.getItem('token');
+      const baseUrl = api.defaults.baseURL || '';
+      window.open(`${baseUrl}/orders/${orderId}/download/${filename}?token=${token}`, '_blank');
       toast.success('Download started');
     } catch {
       toast.error('Download failed');

@@ -13,6 +13,8 @@ const userSchema = new mongoose.Schema(
     credits: { type: Number, default: 0 },
     totalCreditsEarned: { type: Number, default: 0 },
     creditsExpiresAt: { type: Date, default: null }, // rolling 180-day expiry
+    resetCode: { type: String, default: null },
+    resetCodeExpires: { type: Date, default: null },
   },
   { timestamps: true }
 );

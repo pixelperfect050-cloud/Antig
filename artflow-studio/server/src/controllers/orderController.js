@@ -82,6 +82,7 @@ exports.uploadDelivery = async (req, res) => {
       filename: f.filename,
       originalName: f.originalname,
       path: f.path,
+      url: f.path, // Cloudinary URL
       size: f.size,
       mimetype: f.mimetype,
     }));
@@ -136,7 +137,7 @@ exports.downloadFile = async (req, res) => {
       unlockCoupon(order._id).catch(() => {});
     }
 
-    res.download(path.resolve(file.path), file.originalName);
+    res.redirect(file.url || file.path);
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

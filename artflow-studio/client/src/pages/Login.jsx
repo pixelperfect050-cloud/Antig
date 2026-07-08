@@ -21,6 +21,7 @@ export default function Login() {
   const [signupErrors, setSignupErrors] = useState({});
   const updateSignup = (k) => (e) => setSignupForm((p) => ({ ...p, [k]: e.target.value }));
   const clearSignupError = (k) => () => setSignupErrors((p) => ({ ...p, [k]: '' }));
+  const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -111,8 +112,14 @@ export default function Login() {
                   {errors.password && <p className="text-[11px] text-red-300 mt-1">{errors.password}</p>}
                 </div>
 
+                <div className="flex justify-end">
+                  <Link to="/forgot-password" className="text-xs text-blue-200/50 hover:text-[#F59E0B] transition-colors">
+                    Forgot Password?
+                  </Link>
+                </div>
+
                 <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}
-                  type="submit" disabled={loading} className={`${orangeBtn} !mt-6`}>
+                  type="submit" disabled={loading} className={`${orangeBtn} !mt-2`}>
                   {loading
                     ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                     : <><LogIn className="w-4 h-4" /> Sign In</>}
@@ -120,20 +127,6 @@ export default function Login() {
               </div>
             </form>
 
-            {/* Quick access for dev */}
-            <div className="mt-6 pt-5 border-t border-white/10">
-              <p className="text-xs text-blue-200/40 text-center mb-3">Quick access</p>
-              <div className="grid grid-cols-2 gap-2">
-                <button type="button" onClick={() => { setEmail('admin@artflow.studio'); setPassword('admin123'); }}
-                  className="text-xs text-blue-200/60 hover:text-white bg-white/5 border border-white/10 px-3 py-2 rounded-lg text-center transition-colors">
-                  Admin Demo
-                </button>
-                <button type="button" onClick={() => { setEmail(''); setPassword(''); }}
-                  className="text-xs text-blue-200/60 hover:text-white bg-white/5 border border-white/10 px-3 py-2 rounded-lg text-center transition-colors">
-                  Clear
-                </button>
-              </div>
-            </div>
 
             <p className="mt-6 text-center text-xs text-blue-200/30">© 2024 ArtFlow Studio</p>
           </motion.div>

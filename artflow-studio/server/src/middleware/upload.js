@@ -1,28 +1,37 @@
 const multer = require('multer');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const cloudinary = require('cloudinary').v2;
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
-const fs = require('fs');
 
-const dirs = {
-  uploads: path.join(__dirname, '../../uploads'),
-  delivery: path.join(__dirname, '../../uploads/delivery'),
-  quotes: path.join(__dirname, '../../uploads/quotes'),
-};
-Object.values(dirs).forEach((d) => { if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true }); });
-
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, dirs.uploads),
-  filename: (_req, file, cb) => cb(null, `${uuidv4()}${path.extname(file.originalname)}`),
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-const deliveryStorage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, dirs.delivery),
-  filename: (_req, file, cb) => cb(null, `${uuidv4()}${path.extname(file.originalname)}`),
+const getCloudinaryParams = (folder) => ({
+  folder: folder,
+  resource_type: 'auto', // Important for non-image files like PDFs, zips
+  public_id: (req, file) => {
+    const ext = path.extname(file.originalname);
+    return `${uuidv4()}`; // Cloudinary adds the extension for images usually, or we can leave it to auto
+  },
 });
 
-const quoteStorage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, dirs.quotes),
-  filename: (_req, file, cb) => cb(null, `${uuidv4()}${path.extname(file.originalname)}`),
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: getCloudinaryParams('artflow/jobs'),
+});
+
+const deliveryStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: getCloudinaryParams('artflow/delivery'),
+});
+
+const quoteStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: getCloudinaryParams('artflow/quotes'),
 });
 
 const limits = { fileSize: 50 * 1024 * 1024 }; // 50 MB

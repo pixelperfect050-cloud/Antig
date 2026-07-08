@@ -305,7 +305,7 @@ export default function Admin() {
                               {item.files?.length > 0 && (
                                 <div className="flex flex-wrap gap-2 pt-2">
                                   {item.files.map((f, idx) => (
-                                    <a key={idx} href={`${BACKEND_URL}/uploads/${f.filename}`} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-[10px] font-medium text-gray-600 hover:border-blue-300 transition-colors">
+                                    <a key={idx} href={f.url || f.path || `${BACKEND_URL}/uploads/${f.filename}`} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-[10px] font-medium text-gray-600 hover:border-blue-300 transition-colors">
                                       {f.originalName}
                                     </a>
                                   ))}
@@ -377,7 +377,7 @@ export default function Admin() {
                                 <div className="flex flex-wrap gap-3">
                                   {item.files.map((f, idx) => {
                                     const isImage = f.mimetype?.startsWith('image/');
-                                    const fileUrl = `${BACKEND_URL}/uploads/quotes/${f.filename}`;
+                                    const fileUrl = f.url || f.path || `${BACKEND_URL}/uploads/quotes/${f.filename}`;
                                     return (
                                       <a key={idx} href={fileUrl} target="_blank" rel="noreferrer"
                                         className="group relative block">

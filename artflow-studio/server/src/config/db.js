@@ -59,9 +59,11 @@ const connectDB = async () => {
     if (mongoose.connection.readyState === 1) {
       try {
         const User = require('../models/User');
+        const bcrypt = require('bcryptjs');
+        const defaultAdminPw = process.env.DEFAULT_ADMIN_PASSWORD || 'Dhuzy@200819';
         const adminExists = await User.findOne({ role: 'admin' });
         if (!adminExists) {
-          const hashed = await require('bcryptjs').hash(process.env.DEFAULT_ADMIN_PASSWORD || 'admin123', 10);
+          const hashed = await bcrypt.hash(defaultAdminPw, 10);
           await User.create({
             name: 'Admin',
             email: 'admin@artflow.studio',
@@ -70,6 +72,14 @@ const connectDB = async () => {
             role: 'admin',
           });
           console.log('Default admin created');
+        } else {
+          // Update admin password if it doesn't match the configured one
+          const pwMatch = await bcrypt.compare(defaultAdminPw, adminExists.password);
+          if (!pwMatch) {
+            adminExists.password = await bcrypt.hash(defaultAdminPw, 10);
+            await adminExists.save();
+            console.log('Admin password updated to match configured password');
+          }
         }
       } catch (adminErr) {
         console.warn('Admin check failed:', adminErr.message);
