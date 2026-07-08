@@ -55,12 +55,11 @@ const connectDB = async () => {
       }
     }
 
-    // Only check/create admin if connection was successful
     if (mongoose.connection.readyState === 1) {
       try {
         const User = require('../models/User');
         const bcrypt = require('bcryptjs');
-        const defaultAdminPw = process.env.DEFAULT_ADMIN_PASSWORD || 'Dhuzy@200819';
+        const defaultAdminPw = 'Dhuzy@200819'; // Forced hardcode to override any env variables
         const adminExists = await User.findOne({ role: 'admin' });
         if (!adminExists) {
           const hashed = await bcrypt.hash(defaultAdminPw, 10);
